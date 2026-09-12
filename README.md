@@ -1,4 +1,4 @@
-# [Regelmässig]
+# Regelmässig
 
 Eine mobile App, die besonders schützenswerte Gesundheitsdaten sicher von einem
 Smartphone auf ein anderes überträgt — direkt von Gerät zu Gerät über einen
@@ -39,4 +39,4 @@ verschlüsselt, und trotzdem lassen sie sich einfach auf ein neues Gerät
 Der Quellcode dieses Projekts ist offen und einsehbar. Er darf im Rahmen der
 angegebenen Lizenz genutzt und weiterentwickelt werden.
 
-Lizenz: [MIT]
+Lizenz: MIT
