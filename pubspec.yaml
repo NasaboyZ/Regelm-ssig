@@ -37,6 +37,9 @@ dependencies:
   sqflite_sqlcipher: ^3.4.1
   flutter_secure_storage: ^11.1.1
   qr_flutter: ^4.1.0
+  cryptography: ^2.9.0
+  get_it: ^9.2.1
+  mobile_scanner: ^7.4.1
 
 dev_dependencies:
   flutter_test:
