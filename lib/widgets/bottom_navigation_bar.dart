@@ -113,14 +113,7 @@ class _NavigationItem extends StatelessWidget {
                   : Icon(icon, size: 25, color: AppColors.fontColor),
             ),
             const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.fontColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(label, style: AppTypography.nav),
           ],
         ),
       ),

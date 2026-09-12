@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/bottom_navigation_bar.dart';
+import '../theme/app_colors.dart';
 
 class MainView extends StatelessWidget {
   const MainView({super.key});
@@ -8,7 +9,7 @@ class MainView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: const Center(child: Text('Main View')),
+      body: Center(child: Text('Main View', style: AppTypography.body)),
       bottomNavigationBar: AppBottomNavigationBar(
         onSearch: () {
           // Handle search action

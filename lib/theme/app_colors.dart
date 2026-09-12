@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   AppColors._();
@@ -13,5 +14,25 @@ class AppColors {
     183,
     183,
     1.0,
+  );
+}
+
+class AppTypography {
+  AppTypography._();
+  static final TextStyle title = GoogleFonts.inter(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+  );
+  static final TextStyle splashScreen = GoogleFonts.bricolageGrotesque(
+    fontSize: 48,
+    fontWeight: FontWeight.w700,
+  );
+  static final TextStyle body = GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+  );
+  static final TextStyle nav = GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
   );
 }
