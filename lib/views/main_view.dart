@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/app_card.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../theme/app_colors.dart';
 
@@ -16,11 +17,35 @@ class _MainViewState extends State<MainView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text('Main View', style: AppTypography.body)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Zyklustag 24', style: AppTypography.title),
+                  const SizedBox(height: 8),
+                  Text('Nächste Periode · Vorschau', style: AppTypography.body),
+                  const SizedBox(height: 4),
+                  Text(
+                    '12.–15. September',
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: AppBottomNavigationBar(
         selectedIndex: _selectedIndex,
         onItemSelected: (index) {
           if (index == _selectedIndex) return;
+          if (!mounted) return;
           setState(() => _selectedIndex = index);
         },
       ),
