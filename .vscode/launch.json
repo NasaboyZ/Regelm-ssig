@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Regelmässig – iPhone 17 Simulator",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "flutterMode": "debug",
+      "deviceId": "BB6EBC97-1193-466B-B2E6-03574E643243",
+      "preLaunchTask": "iOS Simulator öffnen"
+    }
+  ]
+}

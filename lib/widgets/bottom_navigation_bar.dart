@@ -13,11 +13,7 @@ class AppBottomNavigationBar extends StatelessWidget {
   final ValueChanged<int> onItemSelected;
 
   static const _labels = ['Search', 'Post', 'Notifs'];
-  static const _icons = [
-    Icons.search,
-    Icons.add,
-    Icons.notifications_none,
-  ];
+  static const _icons = [Icons.search, Icons.add, Icons.notifications_none];
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +34,7 @@ class AppBottomNavigationBar extends StatelessWidget {
                     right: 0,
                     bottom: 0,
                     child: Material(
-                      color: AppColors.NavigationBarBackground,
+                      color: AppColors.navigationBarBackground,
                       borderRadius: BorderRadius.circular(40),
                       clipBehavior: Clip.antiAlias,
                       child: Row(
