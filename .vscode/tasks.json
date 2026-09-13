@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "iOS Simulator hochfahren",
+      "type": "process",
+      "command": "/usr/bin/xcrun",
+      "args": [
+        "simctl",
+        "bootstatus",
+        "BB6EBC97-1193-466B-B2E6-03574E643243",
+        "-b"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "iOS Simulator öffnen",
+      "type": "process",
+      "command": "/usr/bin/open",
+      "args": [
+        "-a",
+        "Simulator",
+        "--args",
+        "-CurrentDeviceUDID",
+        "BB6EBC97-1193-466B-B2E6-03574E643243"
+      ],
+      "dependsOn": [
+        "iOS Simulator hochfahren"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
