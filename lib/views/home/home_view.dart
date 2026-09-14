@@ -30,6 +30,7 @@ class HomeView extends StatelessWidget {
         HomeInitial() ||
         HomeLoading() => const Center(child: CircularProgressIndicator()),
         HomeError(:final message) => Center(child: Text(message)),
+        HomeEmpty() => _emptyHome(),
         HomeSuccess(:final cycle) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
@@ -139,15 +140,79 @@ class HomeView extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Beispieldaten · Noch keine persönlichen Einträge',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppColors.muted),
-            ),
           ],
         ),
       };
     },
+  );
+
+  Widget _emptyHome() => ListView(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 6),
+        child: Text(
+          'Regelmässig',
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 36,
+            height: 1.1,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      const AppCard(
+        color: Color(0xFFF5F3F2),
+        child: Text(
+          'Noch keine Zyklusdaten',
+          style: TextStyle(fontSize: 13, color: AppColors.muted),
+        ),
+      ),
+      const SizedBox(height: 12),
+      AppButton(label: 'Heute erfassen', onPressed: onRecord),
+      const SizedBox(height: 16),
+      const AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Aktueller Zyklus',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Noch keine Einträge',
+              style: TextStyle(fontSize: 13, color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 10),
+      AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Zyklusverlauf',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton(
+                  onPressed: onOpenCalendar,
+                  child: const Text(
+                    'Kalender öffnen ›',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+            CycleCalendar(today: DateTime.now(), periodDays: const {}),
+          ],
+        ),
+      ),
+    ],
   );
 }

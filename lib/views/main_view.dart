@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/cycle_data.dart';
+import '../viewmodels/home_state.dart';
 import '../viewmodels/home_view_model.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/cycle/cycle_calendar.dart';
@@ -14,12 +14,7 @@ class MainView extends StatefulWidget {
 
 class _MainViewState extends State<MainView> {
   int _selectedIndex = 0;
-  // Fixed demo fixture until the local repository is connected.
-  final _cycle = CycleData(
-    today: DateTime(2026, 9, 18),
-    start: DateTime(2026, 9, 1),
-  );
-  late final _homeViewModel = HomeViewModel(initialData: _cycle);
+  final _homeViewModel = HomeViewModel();
   @override
   void dispose() {
     _homeViewModel.dispose();
@@ -50,28 +45,29 @@ class _MainViewState extends State<MainView> {
       ),
     ),
   );
-  void _details() => showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CycleSummaryCard(
-              cycle: _cycle,
-              onDetails: () => Navigator.pop(context),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Beispieldaten: Zykluslänge 28 Tage, Periodendauer 5 Tage. Persönliche Auswertungen folgen nach der Datenerfassung.',
-            ),
-          ],
+  void _details() {
+    final state = _homeViewModel.state;
+    if (state is! HomeSuccess) return;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CycleSummaryCard(
+                cycle: state.cycle,
+                onDetails: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -92,15 +88,9 @@ class _MainViewState extends State<MainView> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 20),
-              CycleCalendar(
-                today: _cycle.today,
-                periodDays: {
-                  for (var i = 0; i < _cycle.periodLength; i++)
-                    _cycle.start.add(Duration(days: i)),
-                },
-              ),
+              CycleCalendar(today: DateTime.now(), periodDays: const {}),
               const SizedBox(height: 20),
-              const Text('Beispieldaten · September 2026'),
+              const Text('Noch keine Einträge'),
             ],
           ),
           const Center(

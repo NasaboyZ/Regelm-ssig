@@ -8,6 +8,10 @@ class HomeInitial extends HomeState {
   const HomeInitial();
 }
 
+class HomeEmpty extends HomeState {
+  const HomeEmpty();
+}
+
 class HomeLoading extends HomeState {
   const HomeLoading();
 }
