@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'theme/app_colors.dart';
 import 'views/main_view.dart';
@@ -17,6 +18,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        textTheme: GoogleFonts.interTextTheme().apply(
+          bodyColor: AppColors.fontColor,
+          displayColor: AppColors.fontColor,
+        ),
+        dividerTheme: const DividerThemeData(
+          color: Color(0xFFE8E6E8),
+          thickness: 1,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: AppColors.muted),
+        ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           primary: AppColors.primary,
