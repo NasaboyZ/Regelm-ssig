@@ -90,7 +90,7 @@ class AppBottomNavigationBar extends StatelessWidget {
                   SizedBox(
                     height: 62,
                     child: AnimatedPadding(
-                      duration: const Duration(milliseconds: 280),
+                      duration: const Duration(milliseconds: 180),
                       curve: Curves.easeInOutCubic,
                       padding: EdgeInsets.only(
                         top: selected ? 0 : 20,
@@ -98,7 +98,7 @@ class AppBottomNavigationBar extends StatelessWidget {
                       ),
                       child: Center(
                         child: TweenAnimationBuilder<Color?>(
-                          duration: const Duration(milliseconds: 280),
+                          duration: const Duration(milliseconds: 180),
                           tween: ColorTween(
                             end: selected
                                 ? AppColors.backgroundColor
@@ -116,7 +116,7 @@ class AppBottomNavigationBar extends StatelessWidget {
                     style: TextStyle(
                       color: AppColors.fontColor,
                       fontSize: 11,
-                      height: 1.3,
+                      height: 1.2,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                     ),
                   ),
