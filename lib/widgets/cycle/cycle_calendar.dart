@@ -84,8 +84,9 @@ class _CycleCalendarState extends State<CycleCalendar> {
           Row(
             children: List.generate(7, (column) {
               final day = row * 7 + column - offset + 1;
-              if (day < 1 || day > count)
+              if (day < 1 || day > count) {
                 return const Expanded(child: SizedBox(height: 34));
+              }
               final date = DateTime(month.year, month.month, day);
               final period = widget.periodDays.any(
                 (value) => sameDay(value, date),
