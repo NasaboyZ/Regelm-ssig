@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../viewmodels/home_state.dart';
 import '../viewmodels/home_view_model.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../widgets/cycle/cycle_calendar.dart';
+import '../viewmodels/cycle_history_view_model.dart';
+import 'cycle/cycle_history_view.dart';
 import '../widgets/cycle/cycle_summary_card.dart';
 import 'home/home_view.dart';
 
@@ -15,9 +16,11 @@ class MainView extends StatefulWidget {
 class _MainViewState extends State<MainView> {
   int _selectedIndex = 0;
   final _homeViewModel = HomeViewModel();
+  final _cycleHistoryViewModel = CycleHistoryViewModel();
   @override
   void dispose() {
     _homeViewModel.dispose();
+    _cycleHistoryViewModel.dispose();
     super.dispose();
   }
 
@@ -80,19 +83,7 @@ class _MainViewState extends State<MainView> {
             onRecord: _record,
             onDetails: _details,
           ),
-          ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const Text(
-                'Zyklusverlauf',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 20),
-              CycleCalendar(today: DateTime.now(), periodDays: const {}),
-              const SizedBox(height: 20),
-              const Text('Noch keine Einträge'),
-            ],
-          ),
+          CycleHistoryView(viewModel: _cycleHistoryViewModel),
           const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
