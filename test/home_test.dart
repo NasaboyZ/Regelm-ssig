@@ -16,6 +16,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
     await tester.pump(StartupViewModel.splashDuration);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('App einrichten'));
     await tester.pumpAndSettle();
     expect(find.text('Heute erfassen'), findsOneWidget);
     expect(find.text('Vorschau'), findsNothing);
@@ -61,6 +66,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
     await tester.pump(StartupViewModel.splashDuration);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('App einrichten'));
     await tester.pumpAndSettle();
   });
 }
