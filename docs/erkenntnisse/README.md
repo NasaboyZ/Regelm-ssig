@@ -14,6 +14,11 @@ Pro Erkenntnis wird eine Markdown-Datei mit einem aussagekräftigen Namen
 angelegt, beispielsweise `001_kurzer_titel.md`. Die folgende Vorlage wird
 kopiert und anhand der tatsächlichen Beobachtung ausgefüllt.
 
+## Dokumentierte Erkenntnisse
+
+- [001: iOS Deployment Target und Simulator-Build](001_ios_deployment_target.md)
+- [002: Device Hub ersetzt die Simulator-App in Xcode 27](002_xcode_27_device_hub.md)
+
 ## Vorlage
 
 ```markdown

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:regelmaessig/main.dart';
+import 'package:regelmaessig/viewmodels/startup_view_model.dart';
 import 'package:regelmaessig/theme/app_colors.dart';
 import 'package:regelmaessig/widgets/bottom_navigation_bar.dart';
 
@@ -12,6 +13,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pump(StartupViewModel.splashDuration);
     await tester.pumpAndSettle();
 
     final navigation = find.byType(AppBottomNavigationBar);

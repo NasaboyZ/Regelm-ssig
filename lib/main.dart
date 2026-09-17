@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'theme/app_colors.dart';
-import 'views/main_view.dart';
+import 'views/startup_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: AppColors.backgroundColor,
       ),
-      home: const MainView(),
+      home: const StartupView(),
     );
   }
 }
