@@ -26,7 +26,7 @@ kopiert und anhand der tatsächlichen Beobachtung ausgefüllt.
 
 ## Datum
 
-JJJJ-MM-TT
+TT-MM-JJJJ
 
 ## Beobachtung
 

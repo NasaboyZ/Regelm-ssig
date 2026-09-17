@@ -14,6 +14,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const MyApp());
     await tester.pump(StartupViewModel.splashDuration);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    await tester.tap(find.text('App einrichten'));
     await tester.pumpAndSettle();
 
     final navigation = find.byType(AppBottomNavigationBar);

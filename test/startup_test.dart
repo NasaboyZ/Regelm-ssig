@@ -22,6 +22,15 @@ void main() {
     expect(find.byType(SplashView), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 1));
     expect(find.byType(SplashView), findsNothing);
+    expect(find.text('Dein Zyklus.\nDeine Daten.'), findsOneWidget);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    expect(find.text('Lokal gespeichert.\nImmer verschlüsselt.'), findsOneWidget);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    expect(find.text('Auch beim Transfer\nverschlüsselt.'), findsOneWidget);
+    await tester.tap(find.text('App einrichten'));
+    await tester.pumpAndSettle();
     expect(find.byType(MainView), findsOneWidget);
     expect(
       tester.state<NavigatorState>(find.byType(Navigator)).canPop(),
