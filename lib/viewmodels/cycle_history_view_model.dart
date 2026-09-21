@@ -12,7 +12,7 @@ class CycleHistoryViewModel extends ChangeNotifier {
   }) : _clock = clock ?? DateTime.now,
        periodDays = Set.unmodifiable(periodDays.map(_date)),
        predictedDays = Set.unmodifiable(predictedDays.map(_date)),
-       entryDays = Set.unmodifiable(entryDays.map(_date)) {
+       _entryDays = Set.unmodifiable(entryDays.map(_date)) {
     final now = today;
     _month = DateTime(now.year, now.month);
   }
@@ -20,7 +20,13 @@ class CycleHistoryViewModel extends ChangeNotifier {
   final DateTime Function() _clock;
   final Set<DateTime> periodDays;
   final Set<DateTime> predictedDays;
-  final Set<DateTime> entryDays;
+  Set<DateTime> _entryDays;
+  Set<DateTime> get entryDays => _entryDays;
+  void setEntryDays(Set<DateTime> days) {
+    _entryDays = Set.unmodifiable(days.map(_date));
+    notifyListeners();
+  }
+
   late DateTime _month;
   DateTime? _selectedDay;
   DateTime? get selectedDay => _selectedDay;

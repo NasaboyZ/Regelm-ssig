@@ -15,4 +15,10 @@ class HomeViewModel extends ChangeNotifier {
 
   HomeState _state;
   HomeState get state => _state;
+  Set<DateTime> _entryDays = const {};
+  Set<DateTime> get entryDays => _entryDays;
+  void setEntryDays(Set<DateTime> days) {
+    _entryDays = Set.unmodifiable(days);
+    notifyListeners();
+  }
 }

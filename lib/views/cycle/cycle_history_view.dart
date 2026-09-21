@@ -24,8 +24,13 @@ const _shortMonths = [
 ];
 
 class CycleHistoryView extends StatelessWidget {
-  const CycleHistoryView({super.key, required this.viewModel});
+  const CycleHistoryView({
+    super.key,
+    required this.viewModel,
+    this.onRecordDay,
+  });
   final CycleHistoryViewModel viewModel;
+  final ValueChanged<DateTime>? onRecordDay;
 
   Future<void> _chooseMonth(BuildContext context) async {
     final selected = await showDialog<DateTime>(
@@ -164,7 +169,7 @@ class CycleHistoryView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  _CalendarGrid(viewModel: viewModel),
+                  _CalendarGrid(viewModel: viewModel, onRecordDay: onRecordDay),
                   const SizedBox(height: 24),
                   const Wrap(
                     spacing: 24,
@@ -316,8 +321,14 @@ class _MonthStripState extends State<_MonthStrip> {
 }
 
 class _CalendarGrid extends StatelessWidget {
-  const _CalendarGrid({required this.viewModel});
+  const _CalendarGrid({required this.viewModel, this.onRecordDay});
   final CycleHistoryViewModel viewModel;
+  final ValueChanged<DateTime>? onRecordDay;
+
+  void _select(DateTime date) {
+    viewModel.selectDay(date);
+    onRecordDay?.call(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +363,7 @@ class _CalendarGrid extends StatelessWidget {
                 child: Semantics(
                   selected: selected,
                   button: true,
-                  onTap: () => viewModel.selectDay(date),
+                  onTap: () => _select(date),
                   label:
                       '$day. ${monthNames[month.month - 1]} ${month.year}${today ? ', Heute' : ''}${period ? ', Eingetragen' : ''}${predicted ? ', Vorschau' : ''}${entry ? ', Eintrag vorhanden' : ''}',
                   child: ExcludeSemantics(
@@ -360,7 +371,7 @@ class _CalendarGrid extends StatelessWidget {
                       key: ValueKey(
                         'day-${date.year}-${date.month}-${date.day}',
                       ),
-                      onTap: () => viewModel.selectDay(date),
+                      onTap: () => _select(date),
                       borderRadius: BorderRadius.circular(12),
                       child: SizedBox(
                         height: 76,

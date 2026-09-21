@@ -16,11 +16,13 @@ class HomeView extends StatelessWidget {
     required this.onOpenCalendar,
     required this.onRecord,
     required this.onDetails,
+    this.onRecordDay,
   });
   final HomeViewModel viewModel;
   final VoidCallback onOpenCalendar;
   final VoidCallback onRecord;
   final VoidCallback onDetails;
+  final ValueChanged<DateTime>? onRecordDay;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: viewModel,
@@ -132,6 +134,8 @@ class HomeView extends StatelessWidget {
                   ),
                   CycleCalendar(
                     today: cycle.today,
+                    entryDays: viewModel.entryDays,
+                    onDaySelected: onRecordDay,
                     periodDays: {
                       for (var i = 0; i < cycle.periodLength; i++)
                         cycle.start.add(Duration(days: i)),
@@ -209,7 +213,12 @@ class HomeView extends StatelessWidget {
                 ),
               ],
             ),
-            CycleCalendar(today: DateTime.now(), periodDays: const {}),
+            CycleCalendar(
+              today: DateTime.now(),
+              periodDays: const {},
+              entryDays: viewModel.entryDays,
+              onDaySelected: onRecordDay,
+            ),
           ],
         ),
       ),

@@ -23,10 +23,12 @@ class CycleCalendar extends StatefulWidget {
     super.key,
     required this.today,
     required this.periodDays,
+    this.entryDays = const {},
     this.onDaySelected,
   });
   final DateTime today;
   final Set<DateTime> periodDays;
+  final Set<DateTime> entryDays;
   final ValueChanged<DateTime>? onDaySelected;
   @override
   State<CycleCalendar> createState() => _CycleCalendarState();
@@ -92,10 +94,13 @@ class _CycleCalendarState extends State<CycleCalendar> {
                 (value) => sameDay(value, date),
               );
               final today = sameDay(widget.today, date);
+              final tracked = widget.entryDays.any(
+                (value) => sameDay(value, date),
+              );
               return Expanded(
                 child: Semantics(
                   label:
-                      '$day. ${monthNames[month.month - 1]} ${month.year}${today ? ', Heute' : ''}${period ? ', Periode' : ''}',
+                      '$day. ${monthNames[month.month - 1]} ${month.year}${today ? ', Heute' : ''}${period ? ', Periode' : ''}${tracked ? ', Eintrag vorhanden' : ''}',
                   selected: today,
                   child: Center(
                     child: InkWell(
@@ -115,12 +120,34 @@ class _CycleCalendarState extends State<CycleCalendar> {
                               ? Border.all(color: AppColors.fontColor)
                               : null,
                         ),
-                        child: Text(
-                          '$day',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: period ? Colors.white : AppColors.fontColor,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$day',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: period
+                                    ? Colors.white
+                                    : AppColors.fontColor,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 5,
+                              child: tracked
+                                  ? Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: period
+                                            ? Colors.white
+                                            : const Color(0xFF579F9E),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ],
                         ),
                       ),
                     ),
