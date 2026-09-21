@@ -59,11 +59,12 @@ class _MainViewState extends State<MainView> {
       reminders: _reminders,
       date: date,
     );
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => RecordView(viewModel: viewModel)),
+    final route = MaterialPageRoute<void>(
+      builder: (_) => RecordView(viewModel: viewModel),
     );
-    // Route animations can still read the notifier until the next frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) => viewModel.dispose());
+    await Navigator.of(context).push(route);
+    await route.completed;
+    viewModel.dispose();
   }
 
   void _details() {
