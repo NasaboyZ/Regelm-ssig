@@ -26,7 +26,9 @@ class AppBottomNavigationBar extends StatelessWidget {
                 top: 15,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.navigationBarBackground,
+                    color: AppColors.navigationBarBackground.withValues(
+                      alpha: 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(48),
                   ),
                 ),
