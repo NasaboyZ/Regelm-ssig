@@ -19,10 +19,7 @@
       "command": "/usr/bin/open",
       "args": [
         "-a",
-        "Simulator",
-        "--args",
-        "-CurrentDeviceUDID",
-        "BB6EBC97-1193-466B-B2E6-03574E643243"
+        "DeviceHub"
       ],
       "dependsOn": [
         "iOS Simulator hochfahren"
