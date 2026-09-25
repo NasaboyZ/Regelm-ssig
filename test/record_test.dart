@@ -349,6 +349,59 @@ void main() {
   );
 
   testWidgets(
+    'day strip swipes in both directions and preserves dated entries',
+    (tester) async {
+      tester.view.physicalSize = const Size(403, 874);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(home: RecordView(viewModel: vm)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ruhig'));
+      await tester.pump();
+
+      final strip = find.byKey(const ValueKey('record-day-strip'));
+      Finder day(DateTime date) =>
+          find.byKey(ValueKey('record-day-${dayKey(date)}'));
+      final next = DateTime(2026, 9, 24);
+      await tester.drag(strip, const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      // Scrolling browses dates; tapping explicitly selects a day.
+      expect(vm.selectedDay, today);
+      expect(day(next).hitTestable(), findsOneWidget);
+      await tester.tap(day(next));
+      await tester.pumpAndSettle();
+      expect(vm.selectedDay, next);
+      expect(vm.entry.hasData, isFalse);
+      expect(vm.entryDays, {today});
+
+      await tester.drag(strip, const Offset(300, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(day(today));
+      await tester.pumpAndSettle();
+      expect(vm.entry.selections['mood'], {'calm'});
+      expect(
+        find.byKey(ValueKey('tracking-dot-${dayKey(today)}')),
+        findsOneWidget,
+      );
+
+      // External navigation reveals its selected date; swiping crosses years.
+      vm.selectDay(DateTime(2026, 12, 31));
+      await tester.pumpAndSettle();
+      expect(day(DateTime(2026, 12, 31)).hitTestable(), findsOneWidget);
+      await tester.drag(strip, const Offset(-200, 0));
+      await tester.pumpAndSettle();
+      final january = DateTime(2027, 1, 4);
+      expect(day(january).hitTestable(), findsOneWidget);
+      await tester.tap(day(january));
+      await tester.pumpAndSettle();
+      expect(vm.selectedDay, january);
+      expect(vm.entryDays, {today});
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'editor fits narrow screens with enlarged text and validates measurements',
     (tester) async {
       tester.view.physicalSize = const Size(320, 780);
