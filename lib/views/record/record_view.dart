@@ -256,7 +256,7 @@ class _RecordViewState extends State<RecordView> {
                   constraints: const BoxConstraints(maxWidth: 620),
                   child: Column(
                     children: [
-                      _WeekStrip(viewModel: vm),
+                      _DayStrip(viewModel: vm),
                       const Divider(height: 1),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
@@ -631,9 +631,57 @@ class _RecordViewState extends State<RecordView> {
   }
 }
 
-class _WeekStrip extends StatelessWidget {
-  const _WeekStrip({required this.viewModel});
+class _DayStrip extends StatefulWidget {
+  const _DayStrip({required this.viewModel});
   final RecordViewModel viewModel;
+  @override
+  State<_DayStrip> createState() => _DayStripState();
+}
+
+class _DayStripState extends State<_DayStrip> {
+  static const _dayWidth = 50.0;
+  static final _firstDay = DateTime.utc(1900);
+  static final _lastDay = DateTime.utc(2200);
+  RecordViewModel get viewModel => widget.viewModel;
+  late DateTime _lastSelection = viewModel.selectedDay;
+  late final ScrollController _controller = ScrollController(
+    initialScrollOffset: _indexOf(viewModel.week.first) * _dayWidth,
+  );
+
+  // UTC is used only for calendar arithmetic so DST never skips a date.
+  int _indexOf(DateTime day) =>
+      DateTime.utc(day.year, day.month, day.day).difference(_firstDay).inDays;
+
+  @override
+  void didUpdateWidget(covariant _DayStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_lastSelection == viewModel.selectedDay) return;
+    _lastSelection = viewModel.selectedDay;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controller.hasClients) return;
+      final position = _controller.position;
+      final start = _indexOf(viewModel.selectedDay) * _dayWidth;
+      if (start >= position.pixels &&
+          start + _dayWidth <= position.pixels + position.viewportDimension) {
+        return;
+      }
+      _controller.animateTo(
+        (start - (position.viewportDimension - _dayWidth) / 2).clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        ),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(2, 6, 2, 12),
@@ -648,7 +696,22 @@ class _WeekStrip extends StatelessWidget {
             onPressed: () => viewModel.moveWeek(-1),
           ),
         ),
-        for (final date in viewModel.week) Expanded(child: _day(date)),
+        Expanded(
+          child: SizedBox(
+            height: 56 + MediaQuery.textScalerOf(context).scale(12),
+            child: ListView.builder(
+              key: const ValueKey('record-day-strip'),
+              controller: _controller,
+              scrollDirection: Axis.horizontal,
+              itemExtent: _dayWidth,
+              itemCount: _lastDay.difference(_firstDay).inDays + 1,
+              itemBuilder: (context, index) {
+                final date = _firstDay.add(Duration(days: index));
+                return _day(DateTime(date.year, date.month, date.day));
+              },
+            ),
+          ),
+        ),
         SizedBox(
           width: 24,
           child: IconButton(
@@ -698,14 +761,21 @@ class _WeekStrip extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                  Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(
-                    '${date.day}',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: selected ? Colors.white : AppColors.fontColor,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${date.day}',
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: selected
+                                ? Colors.white
+                                : AppColors.fontColor,
+                          ),
+                        ),
+                      ),
                     ),
-                  ))),
                     const SizedBox(height: 2),
                     SizedBox(
                       height: 5,
