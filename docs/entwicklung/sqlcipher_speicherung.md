@@ -2,14 +2,17 @@
 
 ## Aktueller Stand
 
-Die Tageserfassung kann über einen eigenen Debug-Einstieg in einer verschlüsselten
-SQLite-Datenbank gespeichert werden. Dieser Einstieg ist ausschliesslich für
-erfundene Testdaten vorgesehen: Sein Schlüssel ist öffentlich im Quellcode
+Die Tageserfassung speichert beim normalen Entwicklungsstart (`lib/main.dart`,
+Debug-Modus) in einer verschlüsselten SQLite-Datenbank. Die bisherige separate
+Startdatei `lib/main_sqlcipher_debug.dart` ruft denselben Einstieg auf. Beide
+verwenden dieselbe Datei und denselben Schlüssel. Dies ist ausschliesslich für
+erfundene Testdaten vorgesehen: Der Schlüssel ist öffentlich im Quellcode
 enthalten und bietet deshalb keinen Schutz für persönliche Gesundheitsdaten.
 
-Die reguläre App (`lib/main.dart`) verwendet weiterhin den bisherigen
-Secure-Storage-Eintrag `regelmaessig.tracking.v1`. Dessen JSON-Format und Inhalt
-bleiben erhalten. Es erfolgt noch keine Migration in die Datenbank.
+Neue Einträge werden nicht mehr in Secure Storage geschrieben. Der bisherige
+Eintrag `regelmaessig.tracking.v1` bleibt unangetastet, wird aber nicht automatisch
+in die Datenbank mit öffentlichem Testschlüssel importiert. Alte Secure-Storage-
+Einträge werden daher in diesem Entwicklungsstand nicht angezeigt.
 
 Passphrase, Biometrie, System-Schlüsselablage, Transfer und Wiederherstellung sind
 bewusst noch nicht festgelegt. Der SQLCipher-Dienst nimmt seinen Schlüssel über
@@ -19,27 +22,31 @@ Datenbankverschlüsselung übernimmt SQLCipher.
 
 ## Starten und Einträge wieder ansehen
 
-In VS Code die Startkonfiguration **Regelmässig – SQLCipher (nur Testdaten)** wählen
-und ein Android-Gerät oder einen iOS-Simulator auswählen. Alternativ:
+In VS Code die normale Startkonfiguration oder **Regelmässig – SQLCipher (nur
+Testdaten)** wählen und ein Android-Gerät oder einen iOS-Simulator auswählen.
+Alternativ:
 
 ```sh
 flutter devices
-flutter run --debug -t lib/main_sqlcipher_debug.dart -d <geraete-id>
+flutter run --debug -d <geraete-id>
 ```
 
 1. Die Einführung abschliessen. Das Banner **TESTDATEN** kennzeichnet diesen Start.
 2. Über **Heute erfassen** einen oder mehrere Tage bearbeiten und speichern.
-3. Die App vollständig beenden und mit demselben Debug-Einstieg erneut starten.
+3. Die App vollständig beenden und im Debug-Modus erneut starten.
 4. In der Erfassung oder im Kalender den gespeicherten Tag öffnen. Die Angaben
    und Markierungen müssen wieder vorhanden sein.
 5. Einen Tag leeren und speichern. Beim erneuten Öffnen muss er leer bleiben;
    selbst definierte Kategorien bleiben verfügbar.
 
-Zwischen regulärem Start und SQLCipher-Start immer vollständig neu starten;
-Hot Reload tauscht die bereits registrierten Abhängigkeiten nicht aus.
+Nach dieser Umstellung einmal vollständig neu starten; Hot Reload tauscht die
+bereits registrierten Abhängigkeiten nicht aus.
 Die Testdatenbank ist eine andere Datenquelle als der bisherige Secure Storage.
-Der Debug-Einstieg verweigert in Profile- und Release-Builds den Start; die
-Testschlüssel-Konfiguration steht ausschliesslich im `kDebugMode`-Zweig.
+Der Testschlüssel wird nur im `kDebugMode`-Zweig bereitgestellt. Im normalen
+Profile-/Release-Start scheitert der Datenzugriff kontrolliert, solange kein
+produktiver Schlüsselanbieter angebunden ist. Es gibt keinen Rückfall auf Secure
+Storage oder unverschlüsseltes SQLite. Der alte Debug-Einstieg verweigert in
+Profile- und Release-Builds weiterhin den Start vollständig.
 
 ## Aufbau und Verhalten
 
@@ -81,6 +88,10 @@ Siehe [SQLCipher Security Design](https://www.zetetic.net/sqlcipher/design/) und
 Benötigt wird eine SQLCipher-4-kompatible CLI oder ein Datenbankwerkzeug mit
 SQLCipher-Unterstützung. Ein gewöhnlicher SQLite-Browser kann die verschlüsselte
 Datei nicht öffnen. Immer eine **Kopie der Testdatenbank** untersuchen.
+
+Eine bereits in TablePlus geöffnete Kopie ist eine Momentaufnahme. Neue Einträge
+aus der App erscheinen darin erst, nachdem eine neue Kopie erstellt und geöffnet
+wurde; der Refresh-Knopf allein aktualisiert keine kopierte Datei.
 
 ### iOS-Simulator
 
@@ -154,6 +165,8 @@ Die Unit-/Widget-Tests sichern die bisherigen Erfassungsabläufe und die
 Kompatibilität mit bestehenden Secure-Storage-Daten. Die Integrationstests nutzen
 das echte native SQLCipher-Plugin und eigene temporäre Testdatenbanken:
 
+- Der normale App-Start nutzt SQLCipher ohne Storage-Override; eine über den
+  Speichern-Knopf erfasste Auswahl bleibt nach Schliessen der Verbindung lesbar.
 - Alle Feldtypen und mehrere Tage überleben Schliessen und erneutes Öffnen.
 - Wiederholtes Speichern erzeugt keine doppelten Tage; Leeren und Kategorien
   funktionieren unabhängig voneinander.

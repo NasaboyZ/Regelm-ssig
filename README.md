@@ -36,8 +36,9 @@ verschlüsselt, und trotzdem lassen sie sich einfach auf ein neues Gerät
 
 ## Entwicklung: verschlüsselte Tageserfassung
 
-Der separate SQLCipher-Debug-Start speichert Testeinträge in einer verschlüsselten
-SQLite-Datenbank. Die reguläre App verwendet vorerst weiterhin Secure Storage.
+Der normale Entwicklungsstart speichert Tageserfassungen in einer verschlüsselten
+SQLCipher-Datenbank. Bis zur produktiven Schlüsselverwaltung ist dafür ein
+öffentlicher Testschlüssel hinterlegt; ausschliesslich erfundene Testdaten verwenden.
 Startbefehle, Datenbankkontrolle und Tests stehen in der
 [Anleitung zur SQLCipher-Speicherung](docs/entwicklung/sqlcipher_speicherung.md).
 

@@ -3,13 +3,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:regelmaessig/main.dart' as app;
 import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/models/tracking_catalog.dart';
 import 'package:regelmaessig/repositories/tracking_repository.dart';
 import 'package:regelmaessig/services/appointment_reminders.dart';
 import 'package:regelmaessig/services/sqlcipher_tracking_storage.dart';
+import 'package:regelmaessig/services/tracking_storage.dart';
 import 'package:regelmaessig/viewmodels/record_view_model.dart';
 import 'package:regelmaessig/views/record/record_view.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -94,6 +97,60 @@ void main() {
     connections.clear();
     await directory.delete(recursive: true);
   });
+
+  testWidgets(
+    'normal app startup saves the record in the shared SQLCipher database',
+    (tester) async {
+      final originalDirectory = await getDatabasesPath();
+      await databaseFactory.setDatabasesPath(directory.path);
+      await GetIt.instance.reset();
+      try {
+        app.main();
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Weiter'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Weiter'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('App einrichten'));
+        await tester.pumpAndSettle();
+        expect(
+          GetIt.instance<TrackingStorage>(),
+          isA<SqlCipherTrackingStorage>(),
+        );
+        await tester.tap(find.text('Heute erfassen'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Ruhig'));
+        await tester.pump();
+        await tester.tap(find.text('Eintrag speichern · 1'));
+        await tester.pumpAndSettle();
+        expect(find.byType(RecordView), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        final selectedStorage =
+            GetIt.instance<TrackingStorage>() as SqlCipherTrackingStorage;
+        await selectedStorage.close();
+        final reopened = SqlCipherTrackingStorage(
+          path: p.join(directory.path, 'regelmaessig_tracking_debug.db'),
+          keyProvider: () async => 'regelmaessig-debug-test-key-v1',
+        );
+        connections.add(reopened);
+        final snapshot = await reopened.read();
+        expect(snapshot.days[localDay(DateTime.now())]!.selections['mood'], {
+          'calm',
+        });
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        if (GetIt.instance.isRegistered<TrackingStorage>()) {
+          await (GetIt.instance<TrackingStorage>() as SqlCipherTrackingStorage)
+              .close();
+        }
+        await GetIt.instance.reset();
+        await databaseFactory.setDatabasesPath(originalDirectory);
+      }
+    },
+  );
 
   testWidgets('all fields survive a closed connection and a new repository', (
     _,

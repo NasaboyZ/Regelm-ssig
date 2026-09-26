@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:path/path.dart' as p;
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import '../models/day_entry.dart';
@@ -8,9 +9,17 @@ import 'tracking_storage.dart';
 /// Owns one encrypted connection. Authentication and key storage belong to the
 /// caller; this adapter never persists a key or falls back to plaintext.
 class SqlCipherTrackingStorage implements TrackingStorage {
-  SqlCipherTrackingStorage({required this.path, required this.keyProvider});
+  SqlCipherTrackingStorage({required String path, required this.keyProvider})
+    : _resolvePath = (() async => path);
 
-  final String path;
+  /// Resolves the platform directory lazily so opening failures reach the
+  /// repository's normal load/retry flow instead of preventing app startup.
+  SqlCipherTrackingStorage.local({
+    required String fileName,
+    required this.keyProvider,
+  }) : _resolvePath = (() async => p.join(await getDatabasesPath(), fileName));
+
+  final Future<String> Function() _resolvePath;
   final Future<String> Function() keyProvider;
   Future<Database>? _opening;
   bool _closed = false;
@@ -31,7 +40,7 @@ class SqlCipherTrackingStorage implements TrackingStorage {
     final key = await keyProvider();
     if (key.isEmpty) throw ArgumentError('An encryption key is required');
     return openDatabase(
-      path,
+      await _resolvePath(),
       password: key,
       version: 1,
       // A cached connection must never bypass authentication for a new caller.
