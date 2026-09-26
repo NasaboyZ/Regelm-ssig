@@ -50,10 +50,10 @@ Der Datenfluss lautet:
 Gespeichert werden die erfassten Tagesdaten aus dem Modell. Die auswählbaren
 UI-Items sind nicht jeweils eigene Datenbankzeilen. Der damals verwendete Aufbau in Schema-Version 1 war:
 
-| Tabelle | Inhalt |
-| --- | --- |
-| `day_entries` | Eine Zeile pro Datum. `date` ist der Primärschlüssel; `data_json` enthält den serialisierten `DayEntry` mit Auswahlen, eigenen Werten, Terminen, Notiz und Messwerten. |
-| `custom_categories` | Selbst definierte Kategorien mit `id` und `name`, unabhängig davon, ob bereits Tageswerte dazu existieren. |
+| Tabelle             | Inhalt                                                                                                                                                                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `day_entries`       | Eine Zeile pro Datum. `date` ist der Primärschlüssel; `data_json` enthält den serialisierten `DayEntry` mit Auswahlen, eigenen Werten, Terminen, Notiz und Messwerten. |
+| `custom_categories` | Selbst definierte Kategorien mit `id` und `name`, unabhängig davon, ob bereits Tageswerte dazu existieren.                                                             |
 
 Tage und Kategorien werden gemeinsam in einer Transaktion gespeichert. Ein
 erneutes Speichern desselben Tages aktualisiert die vorhandene Zeile. Ein
