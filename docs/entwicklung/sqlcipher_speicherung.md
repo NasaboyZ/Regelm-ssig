@@ -87,7 +87,12 @@ Siehe [SQLCipher Security Design](https://www.zetetic.net/sqlcipher/design/) und
 
 Benötigt wird eine SQLCipher-4-kompatible CLI oder ein Datenbankwerkzeug mit
 SQLCipher-Unterstützung. Ein gewöhnlicher SQLite-Browser kann die verschlüsselte
-Datei nicht öffnen. Immer eine **Kopie der Testdatenbank** untersuchen.
+Datei nicht öffnen. Für Experimente mit SQL-Änderungen eine **Kopie der
+Testdatenbank** untersuchen. Zur lesenden Kontrolle neuer Einträge im
+iOS-Simulator kann TablePlus direkt mit der Originaldatei verbunden werden;
+Änderungen weiterhin über die App vornehmen. Die konkreten Schritte samt dem
+verwendeten Originalpfad stehen in [Daten in TablePlus anschauen](tableplus_datenbank_anschauen.md).
+Eine Übersicht der verwendeten Testschlüssel steht in der [README](README.md).
 
 Eine bereits in TablePlus geöffnete Kopie ist eine Momentaufnahme. Neue Einträge
 aus der App erscheinen darin erst, nachdem eine neue Kopie erstellt und geöffnet
