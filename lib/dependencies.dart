@@ -4,11 +4,12 @@ import 'repositories/tracking_repository.dart';
 import 'services/appointment_reminders.dart';
 import 'services/tracking_storage.dart';
 
-void configureDependencies() {
+void configureDependencies({TrackingStorage? trackingStorage}) {
   final services = GetIt.instance;
   if (services.isRegistered<TrackingRepository>()) return;
   services.registerLazySingleton<TrackingStorage>(
-    () => const SecureTrackingStorage(FlutterSecureStorage()),
+    () =>
+        trackingStorage ?? const SecureTrackingStorage(FlutterSecureStorage()),
   );
   services.registerLazySingleton<TrackingRepository>(
     () => TrackingRepository(services<TrackingStorage>()),
