@@ -14,6 +14,13 @@ TablePlus technische IDs und verschlüsselte BLOBs; die App benötigt beide Schl
 Die Migration übernimmt bestehende Testdaten atomar. Vorgehen und Grenzen stehen
 in der [aktuellen Entwicklungsanleitung](../entwicklung/sqlcipher_speicherung.md).
 
+Die Implementierung und die Migration wurden in automatisierten Tests erfolgreich
+geprüft. Die Migration der damals in TablePlus geöffneten Originaldatei ist jedoch
+noch nicht bestätigt: Der abschliessende Neustart der normalen App wurde
+unterbrochen. Testergebnisse und offene Punkte sind im
+[Verschlüsselungsstand vom 26.09.2026](../entwicklung/README.md#verschlüsselungsstand-vom-26092026)
+festgehalten.
+
 ## Beobachtung
 
 Die Tageserfassung speichert beim normalen Debug-Start in

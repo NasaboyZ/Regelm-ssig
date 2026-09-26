@@ -2,6 +2,23 @@
 
 Hier stehen die Anleitungen zum Starten, Prüfen und Anschauen der App-Daten.
 
+## Verschlüsselungsstand vom 26.09.2026
+
+- **Implementiert:** SQLCipher verschlüsselt die gesamte Datenbank. Zusätzlich
+  verschlüsselt AES-256-GCM alle fachlichen Daten einschliesslich Datum,
+  Tagesinhalten und eigenen Kategorien.
+- **Erfolgreich geprüft:** 32 Unit-/Widget-Tests, 16 native iOS-Integrationstests
+  auf dem iPhone-17-Simulator (iOS 26.5) und die statische Dart-Analyse.
+  Die Integrationstests prüfen auch die Migration von Schema 1 auf 2 und deren
+  Rollback bei Fehlern. Android wurde mangels installiertem Android SDK nicht geprüft.
+- **Noch nicht bestätigt:** Die Migration der bestehenden, zuvor in TablePlus
+  angeschauten Simulator-Datenbank. Der abschliessende Neustart der normalen App
+  wurde unterbrochen. Beim nächsten Datenbankzugriff mit der neuen App-Version
+  wird eine vorhandene Version-1-Datenbank automatisch migriert. Die erfolgreichen
+  Migrationstests allein bestätigen nicht den Zustand dieser konkreten Datei.
+- **Weiterhin offen:** Die produktive Schlüsselverwaltung. Beide derzeitigen
+  Schlüssel sind öffentliche Testschlüssel und nur für erfundene Testdaten gedacht.
+
 ## Anleitungen
 
 - [SQLCipher-Speicherung](sqlcipher_speicherung.md): Datenfluss, Tabellen,

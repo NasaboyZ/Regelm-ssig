@@ -245,3 +245,9 @@ Bestandteil dieses Entwicklungsstands.
 Prüfstand vom 26.09.2026: 32 Unit-/Widget-Tests und 16 native Integrationstests
 auf dem iPhone-17-Simulator (iOS 26.5) erfolgreich. Android wurde mangels
 installiertem Android SDK nicht geprüft.
+
+Die statische Dart-Analyse war ebenfalls erfolgreich. Die Migration der zuvor
+in TablePlus angeschauten Simulator-Datenbank ist dagegen noch nicht bestätigt,
+da der abschliessende App-Neustart unterbrochen wurde. Der
+[dokumentierte Verschlüsselungsstand](README.md#verschlüsselungsstand-vom-26092026)
+trennt die geprüfte Implementierung vom noch unbestätigten Zustand dieser Datei.
