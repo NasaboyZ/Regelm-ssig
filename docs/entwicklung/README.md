@@ -25,17 +25,38 @@ Passphrasen oder produktiven Zugangsdaten.
 
 | Wert | Einsatzort | Zweck |
 | --- | --- | --- |
-| `regelmaessig-debug-test-key-v1` | [`lib/dependencies.dart`](../../lib/dependencies.dart), nur im Debug-Modus | Öffnen und Verschlüsseln von `regelmaessig_tracking_debug.db` beim normalen App-Start. `main_sqlcipher_debug.dart` ruft denselben Einstieg auf. |
+| `regelmaessig-debug-test-key-v1` | [`debug_tracking_keys.dart`](../../lib/services/debug_tracking_keys.dart), nur im Debug-Modus | Öffnen und Verschlüsseln von `regelmaessig_tracking_debug.db` beim normalen App-Start. `main_sqlcipher_debug.dart` ruft denselben Einstieg auf. |
 | `regelmaessig-debug-test-key-v1` | TablePlus, Feld **Passphrase** | Verwendet beim Öffnen der ursprünglichen Datenbankkopie und der Originaldatei unter **Regelmässig – Simulator aktuell**. Es wurde dafür kein neuer Schlüssel erzeugt. |
 | `regelmaessig-debug-test-key-v1` | SQLCipher-CLI-Beispiel in der [Speicheranleitung](sqlcipher_speicherung.md#kopie-entschlüsseln-und-abfragen) | Derselbe Schlüssel wird dort über `PRAGMA key` gesetzt. |
 | `regelmaessig-debug-test-key-v1` | [Integrationstest](../../integration_test/sqlcipher_tracking_storage_test.dart) zum normalen App-Start | Prüft, ob der reguläre Speichern-Ablauf in die Debug-Datenbank schreibt. |
 | `integration-test-only-key` | Übrige SQLCipher-Integrationstests in derselben Testdatei | Öffnet die eigens angelegten temporären Testdatenbanken; gilt nicht für die in TablePlus gezeigte App-Datenbank. |
 | `incorrect-key` | Negativtest in derselben Testdatei | Absichtlich falscher Schlüssel; der Datenzugriff muss scheitern. Auch ein leerer Schlüssel wird separat auf Ablehnung geprüft. |
 
-Der [SQLCipher-Dienst](../../lib/services/sqlcipher_tracking_storage.dart)
-übernimmt den gelieferten Schlüssel über `keyProvider` und reicht ihn als
-`password` an SQLCipher weiter. Er speichert selbst keinen Schlüssel. Der
-öffentliche Debug-Schlüssel ist aktuell allerdings im App-Quellcode enthalten.
+## Separater AES-256-Datenschlüssel
+
+Die App verwendet für die zweite Ebene folgende **32 Bytes**, hier als Hexwert:
+
+```text
+000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+```
+
+Dies ist ein öffentlicher Testschlüssel, keine neu einzurichtende Passphrase.
+Er wird in [`DebugTrackingKeys.dataKey()`](../../lib/services/debug_tracking_keys.dart)
+als Bytefolge `00` bis `1f` bereitgestellt. Er wird **nicht** in TablePlus eingegeben.
+TablePlus öffnet mit der bisherigen Passphrase die Datenbank und zeigt danach
+weiterhin verschlüsselte Payloads. Die App entschlüsselt diese mit dem AES-Schlüssel.
+
+Die isolierten AES- und SQLCipher-Tests verwenden stattdessen 32 Bytes mit dem
+Wert `42` (hex `2a`), für falsche Schlüssel 32 Bytes mit dem Wert `43` (hex `2b`).
+Tests ungültiger Schlüssellängen verwenden zusätzlich bewusst zu kurze oder zu
+lange Bytefolgen. Diese Werte gelten nicht für die normale Debug-App.
+
+Der [SQLCipher-Dienst](../../lib/services/sqlcipher_tracking_storage.dart) erhält
+über `keyProvider` den SQLCipher-Schlüssel und über `dataKeyProvider` den separaten
+AES-Schlüssel. Die Registrierung erfolgt in
+[`lib/dependencies.dart`](../../lib/dependencies.dart). Der Dienst legt keine
+Schlüssel dauerhaft ab; beide öffentlichen Debug-Testschlüssel stehen jedoch im
+App-Quellcode. Auch der normale App-Start-Integrationstest verwendet dieses Paar.
 
 Eine produktive Passphrase wurde nicht eingerichtet. Die spätere Lösung für
 Passphrase, Biometrie, Keychain/Keystore und Transfer bleibt offen. Im

@@ -1,6 +1,18 @@
 # App-Daten in TablePlus anschauen
 
-## Was wir am 26.09.2026 gemacht haben
+## Aktueller Stand: zwei Verschlüsselungsebenen
+
+Seit Schema-Version 2 verschlüsselt AES-256-GCM zusätzlich alle fachlichen Werte.
+Nach dem Öffnen in TablePlus sind deshalb nur `id` und `payload` sichtbar. Dies
+ist beabsichtigt. Die App kann die Inhalte weiterhin anzeigen, weil sie zusätzlich
+den separaten Datenschlüssel erhält. Beide Testschlüssel sind in der
+[Entwicklungs-README](README.md) dokumentiert.
+
+Die folgenden Beobachtungen beschreiben die erste Kontrolle mit Schema-Version 1.
+Beim nächsten vollständigen App-Start mit dem neuen Code wird diese Datenbank
+atomar auf Version 2 migriert. Hot Reload allein genügt dafür nicht.
+
+## Was wir am 26.09.2026 zunächst gemacht haben
 
 Die bisherige TablePlus-Verbindung **regelmässig** zeigte auf diese Kopie:
 
@@ -74,13 +86,16 @@ SQLite-Verbindung wie oben öffnen.
 
 | Stelle | Was dort zu sehen ist |
 | --- | --- |
-| `day_entries.date` | Das erfasste Kalenderdatum; pro Tag eine Zeile. |
-| `day_entries.data_json` | Gespeicherte Auswahlen, eigene Werte, Termine, Notiz und Messwerte des Tages als JSON. |
-| `custom_categories` | Selbst angelegte Kategoriebezeichnungen mit ihrer ID. |
+| `day_entries.id` | Technische Zeilennummer, kein Datum. |
+| `day_entries.payload` | AES-256-GCM-verschlüsselter Tagesdatensatz einschliesslich Datum. |
+| `custom_categories.payload` | Verschlüsselte fachliche Kategorie-ID und Bezeichnung. |
+| `tracking_metadata` | Verschlüsselter Prüfwert zur Kontrolle des Datenschlüssels, auch bei leerer Datenbank. |
 
 Nach einem weiteren Speichern in der App oben rechts auf **Reload ↻** klicken.
-Die Anzeige fragt dann die Originaldatei erneut ab. Beim erneuten Speichern
-desselben Tages wird dessen Zeile aktualisiert; es entsteht keine zusätzliche
+Die Anzeige fragt dann die Originaldatei erneut ab. Nach der Schema-Migration
+gegebenenfalls die Verbindung erneut öffnen, damit TablePlus auch die neuen
+Spalten lädt. Tagesinhalte jetzt in der App prüfen, nicht im BLOB-Feld. Beim erneuten Speichern
+desselben Tages bleibt genau ein Datensatz für diesen Tag erhalten; es entsteht keine zusätzliche
 Zeile für jede Auswahl.
 
 Falls die Anzeige leer bleibt, zuerst den Verbindungspfad prüfen: Zeigt er auf

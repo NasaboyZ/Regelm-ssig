@@ -4,6 +4,16 @@
 
 26-09-2026
 
+## Nachtrag: zweite Verschlüsselungsebene
+
+Dieser Eintrag beschreibt die erste TablePlus-Kontrolle mit Schema-Version 1.
+Mit Schema-Version 2 werden nun zusätzlich sämtliche fachlichen Werte mit
+AES-256-GCM verschlüsselt. Datum und Kategoriebezeichnungen stehen ebenfalls
+innerhalb der Payloads. Nach dem Öffnen mit nur dem SQLCipher-Schlüssel zeigt
+TablePlus technische IDs und verschlüsselte BLOBs; die App benötigt beide Schlüssel.
+Die Migration übernimmt bestehende Testdaten atomar. Vorgehen und Grenzen stehen
+in der [aktuellen Entwicklungsanleitung](../entwicklung/sqlcipher_speicherung.md).
+
 ## Beobachtung
 
 Die Tageserfassung speichert beim normalen Debug-Start in
@@ -31,7 +41,7 @@ Der Datenfluss lautet:
 `RecordView → RecordViewModel → TrackingRepository → TrackingStorage → SQLCipher`
 
 Gespeichert werden die erfassten Tagesdaten aus dem Modell. Die auswählbaren
-UI-Items sind nicht jeweils eigene Datenbankzeilen. Der aktuelle Aufbau ist:
+UI-Items sind nicht jeweils eigene Datenbankzeilen. Der damals verwendete Aufbau in Schema-Version 1 war:
 
 | Tabelle | Inhalt |
 | --- | --- |
@@ -56,8 +66,8 @@ Der aktuelle öffentliche Schlüssel für erfundene Debug-Testdaten lautet:
 regelmaessig-debug-test-key-v1
 ```
 
-Dieser Schlüssel steht derzeit ausdrücklich im Debug-Zweig von
-[`lib/dependencies.dart`](../../lib/dependencies.dart). Er ist keine persönliche
+Dieser Schlüssel wird nur im Debug-Modus über
+[`DebugTrackingKeys`](../../lib/services/debug_tracking_keys.dart) bereitgestellt. Er ist keine persönliche
 Passphrase und bietet keinen Schutz für echte Gesundheitsdaten. Der
 SQLCipher-Dienst erhält den Schlüssel über einen `keyProvider` und legt ihn
 selbst nicht ab. Die produktive Lösung mit Passphrase, Biometrie und

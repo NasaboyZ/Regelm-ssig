@@ -1,13 +1,14 @@
-# Tageserfassung mit SQLCipher testen
+# Tageserfassung mit SQLCipher und AES-256-GCM testen
 
 ## Aktueller Stand
 
 Die Tageserfassung speichert beim normalen Entwicklungsstart (`lib/main.dart`,
-Debug-Modus) in einer verschlüsselten SQLite-Datenbank. Die bisherige separate
-Startdatei `lib/main_sqlcipher_debug.dart` ruft denselben Einstieg auf. Beide
-verwenden dieselbe Datei und denselben Schlüssel. Dies ist ausschliesslich für
-erfundene Testdaten vorgesehen: Der Schlüssel ist öffentlich im Quellcode
-enthalten und bietet deshalb keinen Schutz für persönliche Gesundheitsdaten.
+Debug-Modus) in einer verschlüsselten SQLite-Datenbank. Zusätzlich sind alle
+fachlichen Datensätze mit AES-256-GCM verschlüsselt (Schema-Version 2). Die bisherige
+separate Startdatei `lib/main_sqlcipher_debug.dart` ruft denselben Einstieg auf. Beide
+verwenden dieselbe Datei und dieselben zwei Schlüssel. Dies ist ausschliesslich für
+erfundene Testdaten vorgesehen: Beide Testschlüssel sind öffentlich im Quellcode
+enthalten und bieten deshalb keinen Schutz für persönliche Gesundheitsdaten.
 
 Neue Einträge werden nicht mehr in Secure Storage geschrieben. Der bisherige
 Eintrag `regelmaessig.tracking.v1` bleibt unangetastet, wird aber nicht automatisch
@@ -15,10 +16,11 @@ in die Datenbank mit öffentlichem Testschlüssel importiert. Alte Secure-Storag
 Einträge werden daher in diesem Entwicklungsstand nicht angezeigt.
 
 Passphrase, Biometrie, System-Schlüsselablage, Transfer und Wiederherstellung sind
-bewusst noch nicht festgelegt. Der SQLCipher-Dienst nimmt seinen Schlüssel über
-einen injizierten `keyProvider` entgegen. Er legt selbst keinen Schlüssel ab.
-`cryptography` wird für diese Speicherung nicht zusätzlich benötigt: Die
-Datenbankverschlüsselung übernimmt SQLCipher.
+bewusst noch nicht festgelegt. Der SQLCipher-Dienst erhält seine Schlüssel über
+einen injizierten `keyProvider` für SQLCipher und einen `dataKeyProvider` für
+AES-256-GCM. Er legt selbst keine Schlüssel ab. SQLCipher verschlüsselt
+die Datenbankdatei; das bereits installierte Paket `cryptography` übernimmt die
+zusätzliche Verschlüsselung der Datensätze mit einem separaten 32-Byte-Schlüssel.
 
 ## Starten und Einträge wieder ansehen
 
@@ -55,33 +57,76 @@ TrackingStorage`. `TrackingStorage.read()` liefert einen `TrackingSnapshot`;
 `write(snapshot)` speichert den vollständigen Stand. Die Storage-Adapter übernehmen
 die Serialisierung. UI und Repository kennen keine SQL-Befehle oder Schlüssel.
 
-Dateiname: `regelmaessig_tracking_debug.db`, Schema-Version: `1` (`user_version`).
+Dateiname: `regelmaessig_tracking_debug.db`, Schema-Version: `2` (`user_version`).
 
-| Tabelle | Spalten | Zweck |
+| Tabelle | Spalten | Inhalt der verschlüsselten Payload |
 | --- | --- | --- |
-| `day_entries` | `date TEXT PRIMARY KEY`, `data_json TEXT` | Ein Eintrag je lokalem Datum im Format `YYYY-MM-DD`; JSON enthält alle Angaben einschliesslich Messwerten und Terminen. |
-| `custom_categories` | `id TEXT PRIMARY KEY`, `name TEXT` | Eigene Kategorien, auch wenn noch kein Tag Werte dafür enthält. |
+| `day_entries` | `id INTEGER PRIMARY KEY`, `payload BLOB` | Vollständiger `DayEntry`, einschliesslich Datum, Auswahlen, eigenen Werten, Messwerten, Notizen und Terminen. |
+| `custom_categories` | `id INTEGER PRIMARY KEY`, `payload BLOB` | Fachliche Kategorie-ID und Name; Definitionen bleiben auch ohne Tageswerte erhalten. |
+| `tracking_metadata` | `id INTEGER PRIMARY KEY`, `payload BLOB` | Ein verschlüsselter Prüfwert unter ID 1, um den Datenschlüssel auch bei leerer Datenbank zu prüfen. |
 
-Alle Spalten sind `NOT NULL`. Die JSON-Struktur entspricht `DayEntry.toJson()`.
+Alle Spalten sind `NOT NULL`. Die sichtbaren IDs sind technische Zeilennummern.
+Sie enthalten keine Datums- oder Kategoriebezeichnungen. Die Tage werden nach
+Datum sortiert gespeichert; Kategorien behalten ihre bisherige Reihenfolge.
+Anzahl, Reihenfolge und ungefähre Grösse der Datensätze bleiben nach Öffnen der
+SQLCipher-Ebene sichtbar.
+
+### Zweite Ebene: AES-256-GCM
+
+Vor der Verschlüsselung werden die Modelle als UTF-8-JSON serialisiert. JSON wird
+nicht mehr als lesbare SQL-Spalte gespeichert. CBOR bleibt für den späteren
+QR-Transfer vorgesehen; dieser Schritt implementiert noch keinen Transfer.
+
+Das binäre Payload-Format lautet:
+
+`Version (1 Byte, Wert 1) | zufällige Nonce (12 Byte) | Chiffrat | GCM-Tag (16 Byte)`
+
+Jeder Schreibvorgang erzeugt für jede Payload eine neue Nonce. Als authentifizierte
+Zusatzdaten (AAD) werden die UTF-8-Bytes des JSON-Arrays
+`["regelmaessig.tracking",1,"<Tabellenname>",<technische ID>]` verwendet.
+Damit scheitert auch das Verschieben einer Payload in eine andere Zeile oder
+Tabelle. AES-GCM prüft die Authentizität vor der Auswertung des JSON.
+Siehe [cryptography: AesGcm](https://pub.dev/documentation/cryptography/latest/cryptography/AesGcm-class.html).
+
 Das Tagesdatum bleibt ein lokales Kalenderdatum; Terminzeitpunkte werden wie
 bisher als UTC gespeichert und beim Lesen in die lokale Zeit umgewandelt.
 
-Ein Speichervorgang aktualisiert die Tageszeilen und Kategorien in einer einzigen
-Transaktion. Nicht mehr enthaltene Tage werden entfernt. Ein Fehler rollt alle
-Änderungen zurück; Repository und Entwurf werden nicht als gespeichert markiert.
-Auch das Lesen beider Tabellen erfolgt in einer gemeinsamen Transaktion.
+### Transaktionen und Migration
 
-Ein fehlender oder leerer Schlüssel wird abgewiesen. Öffnungsfehler, beschädigte
-Daten und unbekannte Schema-Versionen führen niemals zu einem automatischen
-Löschen oder einem unverschlüsselten Ersatz. Fehlgeschlagenes Öffnen lässt sich
-wiederholen. `close()` schliesst die Verbindung endgültig; zum erneuten Öffnen
-wird eine neue Storage-Instanz erstellt.
+Beim Speichern wird der vollständige Snapshot vorab verschlüsselt und dann in
+einer Transaktion in beiden fachlichen Tabellen ersetzt. Vollständig geleerte
+Tage entfallen. Technische IDs sind keine stabilen fachlichen Identifikatoren.
+Vor dem Ersetzen werden der Prüfwert und die vorhandenen Datensätze authentifiziert
+und gelesen. Auch nach einem früheren erfolgreichen Laden verhindert ein später
+beschädigter Datensatz somit das Überschreiben. Bei Fehlern bleiben der bisherige
+Stand und der ungespeicherte Entwurf erhalten.
 
-SQLCipher verschlüsselt Datenbankseiten, einschliesslich Tabellenstruktur und
-JSON-Inhalten. Temporäre SQL-Daten werden im Arbeitsspeicher gehalten. Die App
-aktiviert keine SQL-Debug-Logs und gibt weder Schlüssel noch Einträge aus.
-Siehe [SQLCipher Security Design](https://www.zetetic.net/sqlcipher/design/) und
-[Flutter-Plugin](https://pub.dev/packages/sqflite_sqlcipher/versions/3.4.1).
+Beim ersten Öffnen einer Version-1-Datenbank übernimmt die App automatisch die
+bisherigen `date`-/`data_json`- und Kategorie-Werte. Sie validiert die Daten,
+verschlüsselt sie und ersetzt die Tabellen innerhalb der Schema-Transaktion.
+Schlägt ein Schritt fehl, bleiben Schema-Version 1 und die bisherigen Daten
+bestehen. Die Migration erzeugt keine Klartext-Exportdateien. `secure_delete = ON`
+bereinigt gelöschte SQLite-Inhalte. Bereits bestehende Kopien oder Backups werden
+nicht nachträglich geändert; dies ist keine Zusage einer forensisch sicheren
+Löschung aller früheren Dateiversionen auf dem Gerät.
+
+Beide Schlüssel werden vor dem Anlegen oder Migrieren einer Datenbank angefordert.
+Ein leerer SQLCipher-Schlüssel oder ein Datenschlüssel mit falscher Länge wird
+abgewiesen. Bei einer bestehenden Version-2-Datenbank wird der Datenschlüssel
+anhand des Prüfwerts geprüft. Unbekannte Schema-/Payload-Versionen, falsche
+Schlüssel und beschädigte Daten führen zu einem Fehler, niemals zu automatischem
+Löschen oder einem Klartext-Fallback. Fehlgeschlagenes Öffnen lässt sich wiederholen.
+`close()` schliesst die Verbindung; zum erneuten Öffnen wird eine neue Instanz erstellt.
+
+SQLCipher verschlüsselt weiterhin Datenbankseiten einschliesslich Tabellenstruktur
+und Payloads. Temporäre SQL-Daten bleiben im Arbeitsspeicher. Dechiffrierte Inhalte
+werden für die App im Arbeitsspeicher benötigt; sie werden nicht protokolliert oder
+an Fehlermeldungen angehängt.
+
+Die zwei Ebenen schützen nicht gegen die vollständige Kontrolle über die laufende
+App oder das Betriebssystem. Die Datensatz-Authentifizierung erkennt weder das
+Löschen ganzer Zeilen noch das Zurückspielen eines früheren gültigen Datenbestands.
+Die öffentliche Debug-Schlüsselkonfiguration ist kein produktiver Sicherheitsnachweis.
 
 ## Die Testdatenbank ausserhalb der App anschauen
 
@@ -146,13 +191,15 @@ PRAGMA key = 'regelmaessig-debug-test-key-v1';
 PRAGMA cipher_version;
 PRAGMA user_version;
 SELECT name FROM sqlite_master WHERE type = 'table';
-SELECT date, data_json FROM day_entries ORDER BY date;
-SELECT id, name FROM custom_categories ORDER BY rowid;
+SELECT id, hex(payload) FROM day_entries ORDER BY id;
+SELECT id, hex(payload) FROM custom_categories ORDER BY id;
 PRAGMA integrity_check;
 .quit
 ```
 
-Der obige Schlüssel gilt nur für diesen Debug-Einstieg. Für diesen Test ist keine
+Der obige Schlüssel öffnet nur die SQLCipher-Ebene dieses Debug-Einstiegs.
+Die Abfragen zeigen verschlüsselte BLOBs. Die App benötigt zusätzlich den
+AES-Datenschlüssel, um die fachlichen Inhalte anzuzeigen. Für diesen Test ist keine
 eigene Passphrase oder Biometrie nötig. Den Schlüssel vor der ersten Abfrage
 setzen. Zum Gegencheck die Datei in einer neuen Sitzung mit falschem Schlüssel
 oder über die gewöhnliche `sqlite3`-CLI öffnen und eine Tabelle abfragen: Der
@@ -179,9 +226,22 @@ das echte native SQLCipher-Plugin und eigene temporäre Testdatenbanken:
   erhält den ungespeicherten Entwurf.
 - Falsche und fehlende Schlüssel erlauben keinen Tabellenzugriff; der richtige
   Schlüssel funktioniert anschliessend weiterhin.
-- Beschädigtes JSON wird nicht durch einen leeren Stand überschrieben.
+- Falsche AES-Schlüssel werden auch bei leeren Tabellen abgewiesen.
+- Veränderte oder vertauschte Payloads sowie ein fehlender Prüfwert sperren den Zugriff.
+- Fehler beim Migrieren beschädigter Version-1-Daten und während des Schemaumbaus
+  lassen das ursprüngliche Schema samt Daten unverändert.
+- Alle Felder und die Kategorie-Reihenfolge bleiben bei der Migration erhalten.
+- SQL-Abfragen mit nur dem Datenbankschlüssel sehen ausschliesslich technische IDs
+  und BLOBs, keine fachlichen Klartextspalten.
+- Unbekannte Schema-Versionen werden nicht zurückgesetzt.
 - Der echte Speichern-Knopf schreibt in SQLCipher; ein neuer Editor lädt die Auswahl.
 
 Ein erfolgreicher iOS-Lauf ersetzt keinen Android-Lauf. Dafür müssen Android SDK,
 Emulator oder Gerät vorhanden sein. Die produktive Freischaltung und die Migration
-der bisherigen Daten bleiben ein separater Schritt nach der Schlüsselentscheidung.
+der alten Secure-Storage-Daten bleiben ein separater Schritt nach der
+Schlüsselentscheidung. Die SQLCipher-Migration von Schema 1 auf 2 ist dagegen
+Bestandteil dieses Entwicklungsstands.
+
+Prüfstand vom 26.09.2026: 32 Unit-/Widget-Tests und 16 native Integrationstests
+auf dem iPhone-17-Simulator (iOS 26.5) erfolgreich. Android wurde mangels
+installiertem Android SDK nicht geprüft.
