@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -5,7 +6,18 @@ import 'theme/app_colors.dart';
 import 'views/startup_view.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    kDebugMode
+        ? const Directionality(
+            textDirection: TextDirection.ltr,
+            child: Banner(
+              message: 'TESTDATEN',
+              location: BannerLocation.topEnd,
+              child: MyApp(),
+            ),
+          )
+        : const MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {

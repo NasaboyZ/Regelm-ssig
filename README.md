@@ -34,6 +34,14 @@ Diese App verbindet beide Vorteile. Die Daten bleiben jederzeit lokal und
 verschlüsselt, und trotzdem lassen sie sich einfach auf ein neues Gerät
 übertragen, ohne dass sie je einen Server oder eine Cloud berühren.
 
+## Entwicklung: verschlüsselte Tageserfassung
+
+Der normale Entwicklungsstart speichert Tageserfassungen in einer verschlüsselten
+SQLCipher-Datenbank. Bis zur produktiven Schlüsselverwaltung ist dafür ein
+öffentlicher Testschlüssel hinterlegt; ausschliesslich erfundene Testdaten verwenden.
+Startbefehle, Datenbankkontrolle und Tests stehen in der
+[Anleitung zur SQLCipher-Speicherung](docs/entwicklung/sqlcipher_speicherung.md).
+
 ## Open Source
 
 Der Quellcode dieses Projekts ist offen und einsehbar. Er darf im Rahmen der

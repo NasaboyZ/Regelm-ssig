@@ -2,6 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Regelmässig – SQLCipher (nur Testdaten)",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/lib/main_sqlcipher_debug.dart",
+      "cwd": "${workspaceFolder}",
+      "flutterMode": "debug"
+    },
+    {
       "name": "Regelmässig – iPhone 17 Simulator",
       "type": "dart",
       "request": "launch",

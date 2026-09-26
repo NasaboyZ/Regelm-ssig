@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,17 +12,17 @@ import 'package:regelmaessig/views/record/record_view.dart';
 import 'package:regelmaessig/widgets/cycle/cycle_calendar.dart';
 
 class MemoryStorage implements TrackingStorage {
-  String? value;
+  TrackingSnapshot? value;
   bool failRead = false;
   bool failWrite = false;
   @override
-  Future<String?> read() async {
+  Future<TrackingSnapshot> read() async {
     if (failRead) throw StateError('Read failed');
-    return value;
+    return value ?? TrackingSnapshot();
   }
 
   @override
-  Future<void> write(String value) async {
+  Future<void> write(TrackingSnapshot value) async {
     if (failWrite) throw StateError('Write failed');
     this.value = value;
   }
@@ -213,27 +212,19 @@ void main() {
       vm.clearDay();
       expect(await vm.save(), isTrue);
       expect(repository.snapshot.entryDays, isEmpty);
-      expect((jsonDecode(storage.value!) as Map)['days'], isEmpty);
+      expect(storage.value!.days, isEmpty);
     },
   );
 
-  test(
-    'read failure and corrupt data never overwrite stored records',
-    () async {
-      storage.failRead = true;
-      await vm.load();
-      expect(vm.state, isA<RecordError>());
-      expect(await vm.save(), isFalse);
-      storage.failRead = false;
-      storage.value = '{bad';
-      await vm.load();
-      expect(vm.state, isA<RecordError>());
-      expect(storage.value, '{bad');
-      storage.value = null;
-      await vm.load();
-      expect(vm.state, isA<RecordReady>());
-    },
-  );
+  test('read failure prevents saving and can be retried', () async {
+    storage.failRead = true;
+    await vm.load();
+    expect(vm.state, isA<RecordError>());
+    expect(await vm.save(), isFalse);
+    storage.failRead = false;
+    await vm.load();
+    expect(vm.state, isA<RecordReady>());
+  });
 
   test(
     'week navigation crosses month and year boundaries without mixing entries',

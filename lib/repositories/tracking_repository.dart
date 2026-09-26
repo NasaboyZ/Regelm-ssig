@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/day_entry.dart';
 import '../services/tracking_storage.dart';
@@ -23,11 +22,7 @@ class TrackingRepository extends ChangeNotifier {
   }
 
   Future<void> _read() async {
-    final value = await storage.read();
-    final snapshot = value == null
-        ? TrackingSnapshot()
-        : TrackingSnapshot.fromJson(jsonDecode(value) as Map<String, dynamic>);
-    _snapshot = snapshot;
+    _snapshot = await storage.read();
     _loaded = true;
     notifyListeners();
   }
@@ -35,7 +30,7 @@ class TrackingRepository extends ChangeNotifier {
   Future<void> save(TrackingSnapshot snapshot) async {
     // Never overwrite unread data after a failed load.
     await load();
-    await storage.write(jsonEncode(snapshot.toJson()));
+    await storage.write(snapshot);
     _snapshot = snapshot;
     notifyListeners();
   }
