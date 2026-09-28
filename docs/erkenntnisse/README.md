@@ -18,6 +18,7 @@ kopiert und anhand der tatsächlichen Beobachtung ausgefüllt.
 
 - [001: iOS Deployment Target und Simulator-Build](001_ios_deployment_target.md)
 - [002: Device Hub ersetzt die Simulator-App in Xcode 27](002_xcode_27_device_hub.md)
+- [003: SQLCipher-Speicherung und aktuelle Daten in TablePlus](003_sqlcipher_speicherung_und_tableplus.md)
 
 ## Vorlage
 

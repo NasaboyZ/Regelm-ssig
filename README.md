@@ -37,8 +37,9 @@ verschlüsselt, und trotzdem lassen sie sich einfach auf ein neues Gerät
 ## Entwicklung: verschlüsselte Tageserfassung
 
 Der normale Entwicklungsstart speichert Tageserfassungen in einer verschlüsselten
-SQLCipher-Datenbank. Bis zur produktiven Schlüsselverwaltung ist dafür ein
-öffentlicher Testschlüssel hinterlegt; ausschliesslich erfundene Testdaten verwenden.
+SQLCipher-Datenbank mit zusätzlich AES-256-GCM-verschlüsselten Datensätzen.
+Bis zur produktiven Schlüsselverwaltung sind dafür zwei öffentliche Testschlüssel
+hinterlegt; ausschliesslich erfundene Testdaten verwenden.
 Startbefehle, Datenbankkontrolle und Tests stehen in der
 [Anleitung zur SQLCipher-Speicherung](docs/entwicklung/sqlcipher_speicherung.md).
 
