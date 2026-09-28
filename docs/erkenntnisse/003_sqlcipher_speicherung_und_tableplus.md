@@ -66,6 +66,7 @@ SQLCipher übernimmt die Verschlüsselung der Datenbank einschliesslich
 Tabellenstruktur und JSON-Inhalten. TablePlus benötigt deshalb einen Schlüssel,
 bevor es die Tabellen lesen kann. Die lesbare Anzeige nach dem Entsperren bedeutet
 nicht, dass die Datei unverschlüsselt gespeichert ist.
+tes
 
 Der aktuelle öffentliche Schlüssel für erfundene Debug-Testdaten lautet:
 
