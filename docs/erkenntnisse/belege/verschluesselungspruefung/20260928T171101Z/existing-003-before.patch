@@ -1,0 +1,12 @@
+diff --git a/docs/erkenntnisse/003_sqlcipher_speicherung_und_tableplus.md b/docs/erkenntnisse/003_sqlcipher_speicherung_und_tableplus.md
+index 968ad1b..bc80494 100644
+--- a/docs/erkenntnisse/003_sqlcipher_speicherung_und_tableplus.md
++++ b/docs/erkenntnisse/003_sqlcipher_speicherung_und_tableplus.md
+@@ -66,7 +66,6 @@ SQLCipher übernimmt die Verschlüsselung der Datenbank einschliesslich
+ Tabellenstruktur und JSON-Inhalten. TablePlus benötigt deshalb einen Schlüssel,
+ bevor es die Tabellen lesen kann. Die lesbare Anzeige nach dem Entsperren bedeutet
+ nicht, dass die Datei unverschlüsselt gespeichert ist.
+-tes
+ 
+ Der aktuelle öffentliche Schlüssel für erfundene Debug-Testdaten lautet:
+ 

@@ -1,0 +1,13 @@
+The following plugins do not support Swift Package Manager for ios:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+The following plugins do not support Swift Package Manager for macos:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+00:00 +0: loading /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart
+00:00 +0: roundtrip and fresh nonce even for identical records
+00:00 +1: AES-256-GCM output interoperates with a direct library decrypt
+00:00 +2: wrong key, nonce, ciphertext and tag are rejected
+00:00 +3: payload cannot be moved to another row or table
+00:00 +4: unknown versions, truncation and invalid key lengths fail
+00:00 +5: All tests passed!
