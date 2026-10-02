@@ -1,0 +1,19 @@
+{
+  "name": "Regelmaessig Verschluesselungstest",
+  "id": "B71714F1-F91C-435B-8D71-09891391F569",
+  "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
+  "created_for_audit": true,
+  "uninstall_after_tests": false,
+  "container_after_evidence_test": "/Users/josef/Library/Developer/CoreSimulator/Devices/B71714F1-F91C-435B-8D71-09891391F569/data/Containers/Data/Application/4FDCAE03-CE04-4722-B033-D86DA53D3E1F",
+  "container_after_storage_test": "/Users/josef/Library/Developer/CoreSimulator/Devices/B71714F1-F91C-435B-8D71-09891391F569/data/Containers/Data/Application/E7E3695E-0904-4C35-BE97-3D368D6C7354",
+  "verification_command": [
+    "xcrun",
+    "simctl",
+    "get_app_container",
+    "B71714F1-F91C-435B-8D71-09891391F569",
+    "com.example.regelmaessig",
+    "data"
+  ],
+  "verification_exit_code": 0,
+  "note": "Reinstalling another test changes the app container; exported evidence was copied before the second test."
+}

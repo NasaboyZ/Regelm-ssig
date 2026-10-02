@@ -1,0 +1,40 @@
+The following plugins do not support Swift Package Manager for ios:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+The following plugins do not support Swift Package Manager for macos:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+00:00 +0: loading /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart
+00:00 +0: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart: roundtrip and fresh nonce even for identical records
+00:00 +1: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart: AES-256-GCM output interoperates with a direct library decrypt
+00:00 +2: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart: wrong key, nonce, ciphertext and tag are rejected
+00:00 +3: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart: payload cannot be moved to another row or table
+00:00 +4: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/tracking_payload_cipher_test.dart: unknown versions, truncation and invalid key lengths fail
+00:01 +5: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +6: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +7: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +8: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +9: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +10: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +11: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +12: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +13: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +14: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +15: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +16: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:02 +17: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:03 +18: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/home_test.dart: Home shows the design without gear or preview badge
+00:03 +19: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: today button opens editor, draft dots update, save refreshes home
+00:03 +20: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: today button opens editor, draft dots update, save refreshes home
+00:03 +21: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: today button opens editor, draft dots update, save refreshes home
+00:03 +22: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: today button opens editor, draft dots update, save refreshes home
+00:03 +23: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: today button opens editor, draft dots update, save refreshes home
+00:04 +24: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/navigation_test.dart: Navigation animates between every tab and opens its content
+00:04 +25: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/cycle_history_test.dart: Month selection, today and real calendar markings
+00:04 +26: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: custom category is empty until its first custom value; back protects drafts
+00:04 +27: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: custom category is empty until its first custom value; back protects drafts
+00:04 +28: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: custom category is empty until its first custom value; back protects drafts
+00:04 +29: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: custom category is empty until its first custom value; back protects drafts
+00:04 +30: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: day strip swipes in both directions and preserves dated entries
+00:05 +31: /Users/josef/Documents/Development/Regelmässig/regelmaessig/test/record_test.dart: editor fits narrow screens with enlarged text and validates measurements
+00:05 +32: All tests passed!

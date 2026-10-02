@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-10-02T14:43:49.802924+00:00",
+  "python": "3.14.6 (v3.14.6:c63aec69bd5, Jun 10 2026, 08:07:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "cryptography": "50.0.2",
+  "source_hashes": {
+    "closed-flutter.db": "c270a8fdd9d082739741eafc6b7d7e9a0b2f4a02f49efbad07f04ae42bec2d13",
+    "collection.json": "9176844d0ad3284e31506fa813b768333fafaa83e452f51e2d72a58ffc46590b",
+    "manifest.json": "f46ab9d1226a0f677b20efafdefd069911e71416acf74d8ef93c1ca9cd8db71f",
+    "open-flutter.db": "c270a8fdd9d082739741eafc6b7d7e9a0b2f4a02f49efbad07f04ae42bec2d13"
+  },
+  "verifier_sha256": "8c20a8427da412fecf14683434baa5bd2bcbb2148db9e9f0e2d49f012384d37a",
+  "command": [
+    "angreifer/verify_flutter.py",
+    "--evidence",
+    "/Users/josef/Documents/Development/Regelma\u0308ssig/regelmaessig/docs/erkenntnisse/belege/verschluesselungspruefung/20261002T142700Z/flutter-evidence",
+    "--output",
+    "/Users/josef/Documents/Development/Regelma\u0308ssig/regelmaessig/docs/erkenntnisse/belege/verschluesselungspruefung/20261002T142700Z/flutter-verification"
+  ],
+  "scope": "Read-only exported Flutter fixture; public keys; no production key security claim"
+}

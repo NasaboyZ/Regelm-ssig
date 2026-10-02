@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "days": [
+    {
+      "date": "2026-09-28",
+      "selections": {
+        "mood": [
+          "calm"
+        ]
+      },
+      "customValues": {
+        "audit": [
+          "ERFUNDENER-WERT"
+        ]
+      },
+      "appointments": [
+        {
+          "id": "audit-appointment",
+          "title": "ERFUNDENER-TERMIN",
+          "location": "ERFUNDENER-ORT",
+          "startsAtUtc": "2026-09-29T07:00:00.000Z",
+          "alarmMinutes": null
+        }
+      ],
+      "note": "ERFUNDEN-FLUTTER-AUDIT-20260928-schön",
+      "temperature": 36.7,
+      "weight": 62.5
+    }
+  ],
+  "categories": {
+    "audit": "ERFUNDENE-KATEGORIE"
+  }
+}

@@ -1,0 +1,34 @@
+The following plugins do not support Swift Package Manager for ios:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+The following plugins do not support Swift Package Manager for macos:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+00:00 +0: loading /Users/josef/Documents/Development/Regelmässig/regelmaessig/integration_test/sqlcipher_tracking_storage_test.dart
+Running Xcode build...                                          
+Xcode build done.                                           15.8s
+00:00 +0: v1 migrates all fields and category order to encrypted v2
+00:00 +1: damaged v1 and mid-migration SQL failure leave v1 intact
+error FormatException: Invalid tracking JSON during open, closing...
+error DatabaseException(Error Domain=FMDatabase Code=1 "table tracking_metadata already exists" UserInfo={NSLocalizedDescription=table tracking_metadata already exists}) sql '        CREATE TABLE tracking_metadata (
+          id INTEGER PRIMARY KEY NOT NULL,
+          payload BLOB NOT NULL
+        )
+      ' args [] during open, closing...
+00:01 +2: wrong data key is rejected even for an empty database
+00:01 +3: invalid data key fails before creating or migrating a database
+00:01 +4: tampering after load blocks writes and preserves stored bytes
+00:02 +5: swapped rows and missing key verification cannot be read
+00:02 +6: unknown schema versions are not reset
+error Bad state: Unsupported tracking schema version during open, closing...
+00:02 +7: normal app startup saves the record in the shared SQLCipher database
+00:08 +8: all fields survive a closed connection and a new repository
+00:08 +9: updates, cleared days and empty categories persist without duplicates
+00:08 +10: a SQL failure rolls back days and categories and preserves drafts
+00:08 +11: wrong or absent keys cannot read the closed encrypted database
+00:09 +12: empty keys are rejected before creating a file
+00:09 +13: failed key retrieval can be retried on the same adapter
+00:09 +14: corrupt payload blocks loading and cannot be overwritten
+00:09 +15: save button writes to SQLCipher and a fresh editor restores it
+00:11 +16: (tearDownAll)
+00:11 +16: All tests passed!

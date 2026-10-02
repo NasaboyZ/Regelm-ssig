@@ -7,10 +7,10 @@ import 'package:path/path.dart' as p;
 import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/services/debug_tracking_keys.dart';
 import 'package:regelmaessig/services/sqlcipher_tracking_storage.dart';
-import 'package:regelmaessig/services/tracking_storage.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 /// Only invented data. Retains evidence in a unique app-sandbox directory.
+/// Run on a dedicated test simulator with --no-uninstall to retain the files.
 /// The host-side verifier copies it before the next simulator installation.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

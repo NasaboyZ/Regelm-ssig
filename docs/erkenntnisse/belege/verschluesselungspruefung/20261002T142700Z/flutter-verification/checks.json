@@ -1,0 +1,89 @@
+[
+  {
+    "test": "Flutter evidence is complete",
+    "status": "PASS",
+    "detail": "Complete Flutter fixture manifest and database present"
+  },
+  {
+    "test": "Both public keys decrypt actual Flutter database",
+    "status": "PASS",
+    "detail": "All fields and metadata independently decrypted with both public keys; exact Flutter snapshot match"
+  },
+  {
+    "test": "No SQLCipher key rejected",
+    "status": "PASS",
+    "detail": "DatabaseError"
+  },
+  {
+    "test": "Wrong SQLCipher key rejected",
+    "status": "PASS",
+    "detail": "DatabaseError"
+  },
+  {
+    "test": "Ordinary SQLite cannot query database",
+    "status": "PASS",
+    "detail": "DatabaseError"
+  },
+  {
+    "test": "SQLCipher key alone exposes encrypted payloads",
+    "status": "PASS",
+    "detail": "Only technical IDs and encrypted BLOBs; row counts, ordering and lengths remain visible"
+  },
+  {
+    "test": "Known plaintext markers absent from captured DB files",
+    "status": "PASS",
+    "detail": {
+      "scanned": [
+        "open-flutter.db",
+        "closed-flutter.db"
+      ],
+      "marker_count": 5,
+      "limitation": "Known-marker scan only; absent sidecars not tested"
+    }
+  },
+  {
+    "test": "Wrong AES key rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Nonce manipulation rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Ciphertext manipulation rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Tag manipulation rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Changed table binding rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Changed row binding rejected",
+    "status": "PASS",
+    "detail": "InvalidTag"
+  },
+  {
+    "test": "Unknown payload version rejected",
+    "status": "PASS",
+    "detail": "ValueError"
+  },
+  {
+    "test": "Truncated payload rejected",
+    "status": "PASS",
+    "detail": "ValueError"
+  },
+  {
+    "test": "Source evidence unchanged",
+    "status": "PASS",
+    "detail": "SHA-256 and file inventory unchanged; mutations used in-memory byte copies only"
+  }
+]

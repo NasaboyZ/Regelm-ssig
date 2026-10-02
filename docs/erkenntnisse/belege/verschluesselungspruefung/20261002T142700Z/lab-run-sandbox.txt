@@ -1,0 +1,32 @@
+Dateikopie ohne SQLCipher-Schlüssel abgewiesen
+Dateikopie mit falschem SQLCipher-Schlüssel abgewiesen
+Gewöhnliches SQLite kann die Dateikopie nicht lesen
+Dateien enthalten keine bekannten Klartextmarker
+Nur Datenbankschlüssel: verschlüsselte Payload lesbar
+Beide Debug-Schlüssel: Testeintrag entschlüsselt
+Falscher AES-Schlüssel abgewiesen
+Manipulation an Nonce abgewiesen
+Manipulation an Ciphertext abgewiesen
+Manipulation an Tag abgewiesen
+Vertauschte Tabellenbindung abgewiesen
+Vertauschte Zeilenbindung abgewiesen
+Unbekannte Payloadversion abgewiesen
+Abgeschnittene Payload abgewiesen
+Traceback (most recent call last):
+  File "/Users/josef/Documents/Development/Regelmässig/angreifer/run.py", line 312, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/josef/Documents/Development/Regelmässig/angreifer/run.py", line 219, in main
+    server = server_for(paths, output / 'http.log')
+  File "/Users/josef/Documents/Development/Regelmässig/angreifer/run.py", line 114, in server_for
+    server = HTTPServer(('127.0.0.1', 0), Handler)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 457, in __init__
+    self.server_bind()
+    ~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/http/server.py", line 148, in server_bind
+    socketserver.TCPServer.server_bind(self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 1] Operation not permitted

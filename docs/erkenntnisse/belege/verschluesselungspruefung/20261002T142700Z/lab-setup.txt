@@ -1,0 +1,18 @@
+Cloning into '/Users/josef/Documents/Development/Regelmässig/angreifer/vendor/sqlmap'...
+Collecting cryptography>=46 (from -r /Users/josef/Documents/Development/Regelmässig/angreifer/requirements.lock (line 1))
+  Downloading cryptography-50.0.2-cp311-abi3-macosx_11_0_arm64.whl.metadata (4.4 kB)
+Collecting cffi>=2.0.0 (from cryptography>=46->-r /Users/josef/Documents/Development/Regelmässig/angreifer/requirements.lock (line 1))
+  Using cached cffi-2.1.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (2.5 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=46->-r /Users/josef/Documents/Development/Regelmässig/angreifer/requirements.lock (line 1))
+  Using cached pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+Downloading cryptography-50.0.2-cp311-abi3-macosx_11_0_arm64.whl (3.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.9/3.9 MB 3.6 MB/s  0:00:01
+Using cached cffi-2.1.1-cp314-cp314-macosx_11_0_arm64.whl (184 kB)
+Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+Installing collected packages: pycparser, cffi, cryptography
+
+Successfully installed cffi-2.1.1 cryptography-50.0.2 pycparser-3.0
+
+[notice] A new release of pip is available: 26.1.2 -> 26.2.1
+[notice] To update, run: /Users/josef/Documents/Development/Regelmässig/angreifer/.venv/bin/python -m pip install --upgrade pip
+Bereit: .venv/bin/python run.py

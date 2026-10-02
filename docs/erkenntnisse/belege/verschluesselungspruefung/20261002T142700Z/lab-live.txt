@@ -1,0 +1,240 @@
+Belege: /Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z
+Dateikopie ohne SQLCipher-Schlüssel abgewiesen
+  PASS
+Dateikopie mit falschem SQLCipher-Schlüssel abgewiesen
+  PASS
+Gewöhnliches SQLite kann die Dateikopie nicht lesen
+  PASS
+Dateien enthalten keine bekannten Klartextmarker
+  PASS
+Nur Datenbankschlüssel: verschlüsselte Payload lesbar
+  PASS
+Beide Debug-Schlüssel: Testeintrag entschlüsselt
+  PASS
+Falscher AES-Schlüssel abgewiesen
+  PASS
+Manipulation an Nonce abgewiesen
+  PASS
+Manipulation an Ciphertext abgewiesen
+  PASS
+Manipulation an Tag abgewiesen
+  PASS
+Vertauschte Tabellenbindung abgewiesen
+  PASS
+Vertauschte Zeilenbindung abgewiesen
+  PASS
+Unbekannte Payloadversion abgewiesen
+  PASS
+Abgeschnittene Payload abgewiesen
+  PASS
+HTTP-Gegenproben vor sqlmap
+  PASS
+sqlmap: vulnerable/plain
+        ___
+       __H__
+ ___ ___[.]_____ ___ ___  {1.10.9.32#dev}
+|_ -| . [.]     | .'| . |
+|___|_  ["]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 16:42:29 /2026-10-02/
+
+
+
+[16:42:29] [WARNING] using '/Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/sqlmap-plain' as the output directory
+
+[16:42:29] [INFO] testing connection to the target URL
+
+[16:42:29] [WARNING] turning off pre-connect mechanism because of incompatible server ('BaseHTTP/0.6 Python/3.14.6')
+
+[16:42:29] [INFO] checking if the target is protected by some kind of WAF/IPS
+
+[16:42:30] [INFO] testing if the target URL content is stable
+
+[16:42:30] [INFO] target URL content is stable
+
+[16:42:30] [WARNING] heuristic (basic) test shows that GET parameter 'id' might not be SQL injectable
+
+[16:42:30] [INFO] testing for SQL injection on GET parameter 'id'
+
+[16:42:30] [INFO] testing 'AND boolean-based blind - WHERE or HAVING clause'
+
+[16:42:30] [INFO] GET parameter 'id' appears to be 'AND boolean-based blind - WHERE or HAVING clause' injectable (with --string="{"date":"2026-09-29","selections":{},"customValues":{},"appointments":[],"note":"Sichtbarer Kontrolldatensatz","temperature":36.7,"weight":null}")
+
+[16:42:30] [INFO] testing 'Generic UNION query (NULL) - 1 to 20 columns'
+
+[16:42:30] [INFO] automatically extending ranges for UNION query injection technique tests as there is at least one other (potential) technique found
+
+[16:42:30] [INFO] 'ORDER BY' technique appears to be usable. This should reduce the time needed to find the right number of query columns. Automatically extending the range for current UNION query injection technique test
+
+[16:42:30] [INFO] target URL appears to have 2 columns in query
+
+[16:42:30] [WARNING] reflective value(s) found and filtering out
+
+[16:42:30] [INFO] GET parameter 'id' is 'Generic UNION query (NULL) - 1 to 20 columns' injectable
+GET parameter 'id' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+sqlmap identified the following injection point(s) with a total of 16 HTTP(s) requests:
+---
+Parameter: id (GET)
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: id=2 AND 8631=8631
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 2 columns
+    Payload: id=2 UNION ALL SELECT NULL,CHAR(113,112,107,107,113)||CHAR(86,108,119,79,102,81,87,116,72,114,104,72,109,76,122,119,74,115,117,114,79,72,66,79,88,76,106,77,99,104,73,83,72,112,99,110,80,121,65,78)||CHAR(113,122,107,107,113)-- mNXF
+---
+
+[16:42:30] [INFO] testing SQLite
+
+[16:42:30] [INFO] confirming SQLite
+
+[16:42:30] [INFO] actively fingerprinting SQLite
+
+[16:42:30] [INFO] the back-end DBMS is SQLite
+back-end DBMS: SQLite
+
+[16:42:30] [INFO] fetching SQL SELECT statement query output: 'SELECT hex(payload) FROM day_entries WHERE id=1'
+SELECT hex(payload) FROM day_entries WHERE id=1: '7B2264617465223A22323032362D30392D3238222C2273656C656374696F6E73223A7B7D2C22637573746F6D56616C756573223A7B7D2C226170706F696E746D656E7473223A5B5D2C226E6F7465223A22455246554E44454E2D4C41424F522D4B45494E452D504552534F4E454E444154454E2D3230323630393238222C2274656D7065726174757265223A33362E372C22776569676874223A6E756C6C7D'
+
+[16:42:30] [WARNING] HTTP error codes detected during run:
+500 (Internal Server Error) - 9 times
+
+[16:42:30] [INFO] fetched data logged to text files under '/Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/sqlmap-plain/127.0.0.1'
+
+[*] ending @ 16:42:30 /2026-10-02/
+
+  PASS
+sqlmap: vulnerable/encrypted
+        ___
+       __H__
+ ___ ___[)]_____ ___ ___  {1.10.9.32#dev}
+|_ -| . ["]     | .'| . |
+|___|_  [,]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 16:42:30 /2026-10-02/
+
+
+
+[16:42:30] [WARNING] using '/Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/sqlmap-encrypted' as the output directory
+
+[16:42:31] [INFO] testing connection to the target URL
+
+[16:42:31] [WARNING] turning off pre-connect mechanism because of incompatible server ('BaseHTTP/0.6 Python/3.14.6')
+
+[16:42:31] [INFO] checking if the target is protected by some kind of WAF/IPS
+
+[16:42:41] [CRITICAL] heuristics detected that the target is protected by some kind of WAF/IPS
+are you sure that you want to continue with further target testing? [Y/n] Y
+do you want sqlmap to try to automatically bypass the WAF/IPS during the run (e.g. by using a non-scanner User-Agent and tamper script(s))? [Y/n] Y
+
+[16:42:41] [INFO] using a random (non-scanner) User-Agent and browser-like headers to bypass the WAF/IPS
+
+[16:42:41] [INFO] testing if the target URL content is stable
+
+[16:42:41] [INFO] target URL content is stable
+
+[16:42:41] [WARNING] heuristic (basic) test shows that GET parameter 'id' might not be SQL injectable
+
+[16:42:41] [INFO] testing for SQL injection on GET parameter 'id'
+
+[16:42:41] [INFO] testing 'AND boolean-based blind - WHERE or HAVING clause'
+
+[16:42:41] [INFO] GET parameter 'id' appears to be 'AND boolean-based blind - WHERE or HAVING clause' injectable (with --string="0190f1a30473125f6c1afbd346e7c07970454a4501939e66abd1193c1ca94b8516f2e9feee8dd124d359db6070b4aa018a18e6dcbb26a43ebfa53f7fef72f02cce4e83e3c317c88c0f49485146af80d9ea55b1302c9b0114a6196c769b95564c8a5fb29c872823d1998a0d2e75656b722355b689b5ecb6c707960ffc4e0b205e394e1991176a6b276a9e56c42aed2a9adfeb9d59a3db02ae6e35a4f462ad84ca12d05ed49b6b8dbe45b80eaaf2")
+
+[16:42:41] [INFO] testing 'Generic UNION query (NULL) - 1 to 20 columns'
+
+[16:42:41] [INFO] automatically extending ranges for UNION query injection technique tests as there is at least one other (potential) technique found
+
+[16:42:41] [INFO] 'ORDER BY' technique appears to be usable. This should reduce the time needed to find the right number of query columns. Automatically extending the range for current UNION query injection technique test
+
+[16:42:41] [INFO] target URL appears to have 2 columns in query
+
+[16:42:41] [WARNING] reflective value(s) found and filtering out
+
+[16:42:41] [INFO] GET parameter 'id' is 'Generic UNION query (NULL) - 1 to 20 columns' injectable
+GET parameter 'id' is vulnerable. Do you want to keep testing the others (if any)? [y/N] N
+sqlmap identified the following injection point(s) with a total of 16 HTTP(s) requests:
+---
+Parameter: id (GET)
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: id=2 AND 1450=1450
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 2 columns
+    Payload: id=2 UNION ALL SELECT NULL,CHAR(113,106,118,98,113)||CHAR(85,88,69,105,70,85,88,73,115,79,98,66,83,69,117,103,117,122,107,68,83,86,90,115,120,79,120,67,118,101,89,102,81,74,67,68,103,81,113,103)||CHAR(113,107,106,122,113)-- aafI
+---
+
+[16:42:41] [INFO] testing SQLite
+
+[16:42:41] [INFO] confirming SQLite
+
+[16:42:41] [INFO] actively fingerprinting SQLite
+
+[16:42:41] [INFO] the back-end DBMS is SQLite
+back-end DBMS: SQLite
+
+[16:42:41] [INFO] fetching SQL SELECT statement query output: 'SELECT hex(payload) FROM day_entries WHERE id=1'
+SELECT hex(payload) FROM day_entries WHERE id=1: '014B738F5FBB054AF0E601122FD0CEE913E18FFD591700664A3CBC6A6B171AFEA1346AE484A9424F4C1E5128E1D92F8A2AD1FFDE2BDF209048D630B203A1740BAF4CEF35E40016481005EA70FFF5F508D4EEF84C306BEC4C06B271B455647C6FD99F7B5612A77C0332E048175BE672A1535F0CB02151036FC082B45B866F716E593C6DC77F684CD5341AA4F89A8DA7FC4E7A8CD37B5422C26CB89E38978BF0044878E68A55655CEB282E460FA04A70D57A8EFC95CEBD8DFA9F4A5943'
+
+[16:42:41] [WARNING] HTTP error codes detected during run:
+500 (Internal Server Error) - 9 times
+
+[16:42:41] [INFO] fetched data logged to text files under '/Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/sqlmap-encrypted/127.0.0.1'
+
+[*] ending @ 16:42:41 /2026-10-02/
+
+  PASS
+sqlmap: safe/encrypted
+        ___
+       __H__
+ ___ ___[(]_____ ___ ___  {1.10.9.32#dev}
+|_ -| . [.]     | .'| . |
+|___|_  ["]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user's responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 16:42:41 /2026-10-02/
+
+
+
+[16:42:41] [WARNING] using '/Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/sqlmap-safe' as the output directory
+
+[16:42:41] [INFO] testing connection to the target URL
+
+[16:42:41] [WARNING] turning off pre-connect mechanism because of incompatible server ('BaseHTTP/0.6 Python/3.14.6')
+
+[16:42:41] [INFO] checking if the target is protected by some kind of WAF/IPS
+
+[16:42:41] [INFO] testing if the target URL content is stable
+
+[16:42:42] [INFO] target URL content is stable
+
+[16:42:42] [WARNING] heuristic (basic) test shows that GET parameter 'id' might not be SQL injectable
+
+[16:42:42] [INFO] testing for SQL injection on GET parameter 'id'
+
+[16:42:42] [INFO] testing 'AND boolean-based blind - WHERE or HAVING clause'
+
+[16:42:42] [INFO] testing 'Boolean-based blind - Parameter replace (original value)'
+it is recommended to perform only basic UNION tests if there is not at least one other (potential) technique found. Do you want to reduce the number of requests? [Y/n] Y
+
+[16:42:42] [INFO] testing 'Generic UNION query (NULL) - 1 to 10 columns'
+
+[16:42:42] [WARNING] GET parameter 'id' does not seem to be injectable
+
+[16:42:42] [CRITICAL] all tested parameters do not appear to be injectable. Try to increase values for '--level'/'--risk' options if you wish to perform more tests. Rerun without providing the option '--technique'. If you suspect that there is some kind of protection mechanism involved (e.g. WAF) maybe you could try to use option '--tamper' (e.g. '--tamper=space2comment') and/or switch '--random-agent'
+
+[*] ending @ 16:42:42 /2026-10-02/
+
+  PASS
+Angriffsversuche verändern keine Datenbankdatei
+  PASS
+Ergebnis: 19/19 PASS; /Users/josef/Documents/Development/Regelmässig/angreifer/results/20261002T144228.273771Z/bericht.md

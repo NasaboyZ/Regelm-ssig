@@ -207,10 +207,18 @@ Zugriff muss scheitern. Die Dateigrösse allein beweist keine Verschlüsselung.
 
 ## Automatisierte Prüfungen
 
+Integrationstests nur auf einem separaten Test-Simulator/-Gerät mit expliziter
+Geräte-ID starten. **`--no-uninstall` immer beibehalten:** Flutter deinstalliert
+die Test-App sonst standardmässig nach dem Lauf samt Datencontainer. Diese Option
+erhält die Installation nach dem Test; sie ist kein Backup und verhindert nicht,
+dass beim Teststart eine vorhandene App derselben Bundle-ID ersetzt wird.
+Die Anleitung für einen eigenen Simulator und das Sichern der Prüfdateien steht
+in der [Labor-README](../../../angreifer/README.md#echte-flutter-datenbank-prüfen-ios).
+
 ```sh
 flutter test
 dart analyze lib test integration_test
-flutter test integration_test/sqlcipher_tracking_storage_test.dart -d <ios-oder-android-geraete-id>
+flutter test integration_test/sqlcipher_tracking_storage_test.dart -d <test-geraete-id> --no-uninstall
 ```
 
 Die Unit-/Widget-Tests sichern die bisherigen Erfassungsabläufe und die

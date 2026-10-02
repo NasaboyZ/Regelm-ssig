@@ -1,0 +1,9 @@
+test_collector_rejects_aborted_flutter_run (__main__.VerifierFailureTests.test_collector_rejects_aborted_flutter_run) ... ok
+test_corrupt_database_is_not_protection (__main__.VerifierFailureTests.test_corrupt_database_is_not_protection) ... ok
+test_missing_database_is_not_protection (__main__.VerifierFailureTests.test_missing_database_is_not_protection) ... ok
+test_wrong_fixture_is_not_a_successful_decryption (__main__.VerifierFailureTests.test_wrong_fixture_is_not_a_successful_decryption) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.367s
+
+OK
