@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/josef/Documents/Development/Regelmässig/angreifer/setup.py", line 65, in <module>
+    main()
+    ~~~~^^
+  File "/Users/josef/Documents/Development/Regelmässig/angreifer/setup.py", line 30, in main
+    shutil.copy2(source / name, copied / name)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/shutil.py", line 529, in copy2
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/shutil.py", line 315, in copyfile
+    with open(dst, 'wb') as fdst:
+         ~~~~^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/Users/josef/Documents/Development/Regelmässig/angreifer/vendor/SQLCipher/sqlite3.c'
