@@ -1,6 +1,6 @@
-DateTime localDay(DateTime date) => DateTime(date.year, date.month, date.day);
-String dayKey(DateTime date) =>
-    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+import 'calendar_date.dart';
+import 'period_entry.dart';
+export 'calendar_date.dart';
 
 class DayAppointment {
   const DayAppointment({
@@ -119,19 +119,37 @@ class TrackingSnapshot {
   TrackingSnapshot({
     Map<DateTime, DayEntry> days = const {},
     Map<String, String> categories = const {},
+    List<PeriodEntry> periods = const [],
+    this.forecastConsent = ForecastConsent.unknown,
   }) : days = Map.unmodifiable(days),
-       categories = Map.unmodifiable(categories);
+       categories = Map.unmodifiable(categories),
+       periods = List.unmodifiable(periods);
   final Map<DateTime, DayEntry> days;
   final Map<String, String> categories;
-  Set<DateTime> get entryDays =>
-      days.entries.where((e) => e.value.hasData).map((e) => e.key).toSet();
+  final List<PeriodEntry> periods;
+  final ForecastConsent forecastConsent;
+  TrackingSnapshot copyWith({
+    List<PeriodEntry>? periods,
+    ForecastConsent? forecastConsent,
+  }) => TrackingSnapshot(
+    days: days,
+    categories: categories,
+    periods: periods ?? this.periods,
+    forecastConsent: forecastConsent ?? this.forecastConsent,
+  );
+  Set<DateTime> get entryDays => {
+    ...days.entries.where((e) => e.value.hasData).map((e) => e.key),
+    ...periods.expand((p) => p.days),
+  };
   Map<String, dynamic> toJson() => {
-    'version': 1,
+    'version': 2,
+    'periods': periods.map((p) => p.toJson()).toList(),
+    'forecastConsent': forecastConsent.name,
     'days': days.values.where((d) => d.hasData).map((d) => d.toJson()).toList(),
     'categories': categories,
   };
   factory TrackingSnapshot.fromJson(Map<String, dynamic> json) {
-    if (json['version'] != 1) {
+    if (json['version'] != 1 && json['version'] != 2) {
       throw const FormatException('Unsupported tracking data version');
     }
     final entries = (json['days'] as List).map(
@@ -139,6 +157,12 @@ class TrackingSnapshot {
     );
     return TrackingSnapshot(
       days: {for (final day in entries) day.date: day},
+      periods: (json['periods'] as List? ?? [])
+          .map((p) => PeriodEntry.fromJson(p as Map<String, dynamic>))
+          .toList(),
+      forecastConsent: ForecastConsent.values.byName(
+        json['forecastConsent'] as String? ?? 'unknown',
+      ),
       categories: Map<String, String>.from(json['categories'] as Map),
     );
   }

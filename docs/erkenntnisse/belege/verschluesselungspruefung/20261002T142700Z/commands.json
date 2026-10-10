@@ -1,0 +1,111 @@
+[
+  {
+    "command": [
+      "python3",
+      "setup.py"
+    ],
+    "cwd": "angreifer",
+    "exit_code": 0,
+    "log": "lab-setup.txt"
+  },
+  {
+    "command": [
+      "flutter",
+      "test",
+      "test"
+    ],
+    "cwd": "regelmaessig",
+    "exit_code": 0,
+    "log": "flutter-unit.txt"
+  },
+  {
+    "command": [
+      "flutter",
+      "test",
+      "integration_test/encryption_evidence_test.dart",
+      "-d",
+      "B71714F1-F91C-435B-8D71-09891391F569",
+      "--no-uninstall",
+      "--reporter",
+      "expanded"
+    ],
+    "cwd": "regelmaessig",
+    "exit_code": 0,
+    "log": "flutter-evidence.txt"
+  },
+  {
+    "command": [
+      ".venv/bin/python",
+      "collect_flutter.py",
+      "--log",
+      "<audit>/flutter-evidence.txt",
+      "--output",
+      "<audit>/flutter-evidence"
+    ],
+    "cwd": "angreifer",
+    "exit_code": 0,
+    "evidence": "flutter-evidence/collection.json"
+  },
+  {
+    "command": [
+      ".venv/bin/python",
+      "verify_flutter.py",
+      "--evidence",
+      "<audit>/flutter-evidence",
+      "--output",
+      "<audit>/flutter-verification"
+    ],
+    "cwd": "angreifer",
+    "exit_code": 0,
+    "evidence": "flutter-verification/checks.json"
+  },
+  {
+    "command": [
+      "flutter",
+      "test",
+      "integration_test/sqlcipher_tracking_storage_test.dart",
+      "-d",
+      "B71714F1-F91C-435B-8D71-09891391F569",
+      "--no-uninstall",
+      "--reporter",
+      "expanded"
+    ],
+    "cwd": "regelmaessig",
+    "exit_code": 0,
+    "log": "flutter-storage.txt"
+  },
+  {
+    "command": [
+      ".venv/bin/python",
+      "-u",
+      "run.py",
+      "--live"
+    ],
+    "cwd": "angreifer",
+    "exit_code": 0,
+    "log": "lab-live.txt"
+  },
+  {
+    "command": [
+      ".venv/bin/python",
+      "test_verify_flutter.py",
+      "--evidence",
+      "<audit>/flutter-evidence"
+    ],
+    "cwd": "angreifer",
+    "exit_code": 0,
+    "log": "verifier-negative-tests.txt"
+  },
+  {
+    "command": [
+      "dart",
+      "analyze",
+      "lib",
+      "test",
+      "integration_test"
+    ],
+    "cwd": "regelmaessig",
+    "exit_code": 0,
+    "log": "dart-analyze.txt"
+  }
+]

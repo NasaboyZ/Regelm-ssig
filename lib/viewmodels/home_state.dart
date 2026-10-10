@@ -1,4 +1,4 @@
-import '../models/cycle_data.dart';
+import '../models/cycle_summary.dart';
 
 sealed class HomeState {
   const HomeState();
@@ -18,7 +18,7 @@ class HomeLoading extends HomeState {
 
 class HomeSuccess extends HomeState {
   const HomeSuccess(this.cycle);
-  final CycleData cycle;
+  final CycleSummary cycle;
 }
 
 class HomeError extends HomeState {

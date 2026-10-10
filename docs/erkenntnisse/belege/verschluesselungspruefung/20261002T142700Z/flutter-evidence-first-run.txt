@@ -1,0 +1,13 @@
+The following plugins do not support Swift Package Manager for ios:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+The following plugins do not support Swift Package Manager for macos:
+  - sqflite_sqlcipher
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+00:00 +0: loading /Users/josef/Documents/Development/Regelmässig/regelmaessig/integration_test/encryption_evidence_test.dart
+Running Xcode build...                                          
+Xcode build done.                                           18.9s
+00:00 +0: export real Flutter SQLCipher evidence with public test keys
+REGELMAESSIG_EVIDENCE_PATH=/Users/josef/Library/Developer/CoreSimulator/Devices/BB6EBC97-1193-466B-B2E6-03574E643243/data/Containers/Data/Application/E6246861-69E0-4E95-B46A-73F92A8DE8E0/Documents/encryption_evidence_p797bw/evidence
+00:02 +1: (tearDownAll)
+00:02 +1: All tests passed!

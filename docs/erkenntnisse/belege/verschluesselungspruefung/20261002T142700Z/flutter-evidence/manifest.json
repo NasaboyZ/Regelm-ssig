@@ -1,0 +1,305 @@
+{
+  "timestamp_utc": "2026-10-02T14:42:52.245910Z",
+  "scope": "Actual Flutter storage; invented data; public debug keys",
+  "platform": "ios",
+  "os_version": "Version 26.5 (Build 23F77)",
+  "dart_version": "3.12.1 (stable) (Tue May 26 01:02:21 2026 -0700) on \"ios_arm64\"",
+  "database_key": "regelmaessig-debug-test-key-v1",
+  "data_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "expected_snapshot": {
+    "version": 1,
+    "days": [
+      {
+        "date": "2026-09-28",
+        "selections": {
+          "mood": [
+            "calm"
+          ]
+        },
+        "customValues": {
+          "audit": [
+            "ERFUNDENER-WERT"
+          ]
+        },
+        "appointments": [
+          {
+            "id": "audit-appointment",
+            "title": "ERFUNDENER-TERMIN",
+            "location": "ERFUNDENER-ORT",
+            "startsAtUtc": "2026-09-29T07:00:00.000Z",
+            "alarmMinutes": null
+          }
+        ],
+        "note": "ERFUNDEN-FLUTTER-AUDIT-20260928-schön",
+        "temperature": 36.7,
+        "weight": 62.5
+      }
+    ],
+    "categories": {
+      "audit": "ERFUNDENE-KATEGORIE"
+    }
+  },
+  "inspection_connection_pragmas": {
+    "cipher_version": [
+      {
+        "cipher_version": "4.10.0 community"
+      }
+    ],
+    "cipher_provider": [
+      {
+        "cipher_provider": "commoncrypto"
+      }
+    ],
+    "cipher_provider_version": [
+      {
+        "cipher_provider_version": "61901.120.67"
+      }
+    ],
+    "cipher_page_size": [
+      {
+        "cipher_page_size": "4096"
+      }
+    ],
+    "kdf_iter": [
+      {
+        "kdf_iter": "256000"
+      }
+    ],
+    "cipher_hmac_algorithm": [
+      {
+        "cipher_hmac_algorithm": "HMAC_SHA512"
+      }
+    ],
+    "cipher_kdf_algorithm": [
+      {
+        "cipher_kdf_algorithm": "PBKDF2_HMAC_SHA512"
+      }
+    ],
+    "cipher_use_hmac": [
+      {
+        "cipher_use_hmac": "1"
+      }
+    ],
+    "cipher": [
+      {
+        "cipher": "aes-256-cbc"
+      }
+    ],
+    "journal_mode": [
+      {
+        "journal_mode": "delete"
+      }
+    ],
+    "user_version": [
+      {
+        "user_version": 2
+      }
+    ],
+    "compile_options": [
+      {
+        "compile_options": "ATOMIC_INTRINSICS=1"
+      },
+      {
+        "compile_options": "COMPILER=clang-21.0.0"
+      },
+      {
+        "compile_options": "DEFAULT_AUTOVACUUM"
+      },
+      {
+        "compile_options": "DEFAULT_CACHE_SIZE=-2000"
+      },
+      {
+        "compile_options": "DEFAULT_FILE_FORMAT=4"
+      },
+      {
+        "compile_options": "DEFAULT_JOURNAL_SIZE_LIMIT=-1"
+      },
+      {
+        "compile_options": "DEFAULT_MMAP_SIZE=0"
+      },
+      {
+        "compile_options": "DEFAULT_PAGE_SIZE=4096"
+      },
+      {
+        "compile_options": "DEFAULT_PCACHE_INITSZ=20"
+      },
+      {
+        "compile_options": "DEFAULT_RECURSIVE_TRIGGERS"
+      },
+      {
+        "compile_options": "DEFAULT_SECTOR_SIZE=4096"
+      },
+      {
+        "compile_options": "DEFAULT_SYNCHRONOUS=2"
+      },
+      {
+        "compile_options": "DEFAULT_WAL_AUTOCHECKPOINT=1000"
+      },
+      {
+        "compile_options": "DEFAULT_WAL_SYNCHRONOUS=2"
+      },
+      {
+        "compile_options": "DEFAULT_WORKER_THREADS=0"
+      },
+      {
+        "compile_options": "DIRECT_OVERFLOW_READ"
+      },
+      {
+        "compile_options": "ENABLE_COLUMN_METADATA"
+      },
+      {
+        "compile_options": "ENABLE_FTS3"
+      },
+      {
+        "compile_options": "ENABLE_FTS3_PARENTHESIS"
+      },
+      {
+        "compile_options": "ENABLE_FTS4"
+      },
+      {
+        "compile_options": "ENABLE_FTS5"
+      },
+      {
+        "compile_options": "ENABLE_LOAD_EXTENSION"
+      },
+      {
+        "compile_options": "ENABLE_MEMORY_MANAGEMENT"
+      },
+      {
+        "compile_options": "ENABLE_RTREE"
+      },
+      {
+        "compile_options": "ENABLE_STAT4"
+      },
+      {
+        "compile_options": "ENABLE_UNLOCK_NOTIFY"
+      },
+      {
+        "compile_options": "EXTRA_INIT=sqlcipher_extra_init"
+      },
+      {
+        "compile_options": "EXTRA_SHUTDOWN=sqlcipher_extra_shutdown"
+      },
+      {
+        "compile_options": "HAS_CODEC"
+      },
+      {
+        "compile_options": "MALLOC_SOFT_LIMIT=1024"
+      },
+      {
+        "compile_options": "MAX_ATTACHED=10"
+      },
+      {
+        "compile_options": "MAX_COLUMN=2000"
+      },
+      {
+        "compile_options": "MAX_COMPOUND_SELECT=500"
+      },
+      {
+        "compile_options": "MAX_DEFAULT_PAGE_SIZE=8192"
+      },
+      {
+        "compile_options": "MAX_EXPR_DEPTH=1000"
+      },
+      {
+        "compile_options": "MAX_FUNCTION_ARG=1000"
+      },
+      {
+        "compile_options": "MAX_LENGTH=1000000000"
+      },
+      {
+        "compile_options": "MAX_LIKE_PATTERN_LENGTH=50000"
+      },
+      {
+        "compile_options": "MAX_MMAP_SIZE=0x7fff0000"
+      },
+      {
+        "compile_options": "MAX_PAGE_COUNT=0xfffffffe"
+      },
+      {
+        "compile_options": "MAX_PAGE_SIZE=65536"
+      },
+      {
+        "compile_options": "MAX_SQL_LENGTH=1000000000"
+      },
+      {
+        "compile_options": "MAX_TRIGGER_DEPTH=1000"
+      },
+      {
+        "compile_options": "MAX_VARIABLE_NUMBER=99999"
+      },
+      {
+        "compile_options": "MAX_VDBE_OP=250000000"
+      },
+      {
+        "compile_options": "MAX_WORKER_THREADS=8"
+      },
+      {
+        "compile_options": "MUTEX_PTHREADS"
+      },
+      {
+        "compile_options": "SOUNDEX"
+      },
+      {
+        "compile_options": "SYSTEM_MALLOC"
+      },
+      {
+        "compile_options": "TEMP_STORE=2"
+      },
+      {
+        "compile_options": "THREADSAFE=1"
+      }
+    ],
+    "cipher_integrity_check": [],
+    "integrity_check": [
+      {
+        "integrity_check": "ok"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "phase": "open",
+      "file": "open-flutter.db",
+      "exists": true,
+      "bytes": 16384
+    },
+    {
+      "phase": "open",
+      "file": "open-flutter.db-wal",
+      "exists": false
+    },
+    {
+      "phase": "open",
+      "file": "open-flutter.db-journal",
+      "exists": false
+    },
+    {
+      "phase": "open",
+      "file": "open-flutter.db-shm",
+      "exists": false
+    },
+    {
+      "phase": "closed",
+      "file": "closed-flutter.db",
+      "exists": true,
+      "bytes": 16384
+    },
+    {
+      "phase": "closed",
+      "file": "closed-flutter.db-wal",
+      "exists": false
+    },
+    {
+      "phase": "closed",
+      "file": "closed-flutter.db-journal",
+      "exists": false
+    },
+    {
+      "phase": "closed",
+      "file": "closed-flutter.db-shm",
+      "exists": false
+    }
+  ],
+  "roundtrip_after_reopen": true
+}

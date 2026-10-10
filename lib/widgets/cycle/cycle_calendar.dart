@@ -24,11 +24,15 @@ class CycleCalendar extends StatefulWidget {
     required this.today,
     required this.periodDays,
     this.entryDays = const {},
+    this.spottingDays = const {},
+    this.predictedDays = const {},
     this.onDaySelected,
   });
   final DateTime today;
   final Set<DateTime> periodDays;
   final Set<DateTime> entryDays;
+  final Set<DateTime> spottingDays;
+  final Set<DateTime> predictedDays;
   final ValueChanged<DateTime>? onDaySelected;
   @override
   State<CycleCalendar> createState() => _CycleCalendarState();
@@ -93,6 +97,8 @@ class _CycleCalendarState extends State<CycleCalendar> {
               final period = widget.periodDays.any(
                 (value) => sameDay(value, date),
               );
+              final spotting = widget.spottingDays.contains(date);
+              final predicted = widget.predictedDays.contains(date);
               final today = sameDay(widget.today, date);
               final tracked = widget.entryDays.any(
                 (value) => sameDay(value, date),
@@ -100,7 +106,7 @@ class _CycleCalendarState extends State<CycleCalendar> {
               return Expanded(
                 child: Semantics(
                   label:
-                      '$day. ${monthNames[month.month - 1]} ${month.year}${today ? ', Heute' : ''}${period ? ', Periode' : ''}${tracked ? ', Eintrag vorhanden' : ''}',
+                      '$day. ${monthNames[month.month - 1]} ${month.year}${today ? ', Heute' : ''}${period ? ', Blutung erfasst' : ''}${spotting ? ', Schmierblutung' : ''}${predicted ? ', Geschätzter Beginn' : ''}${tracked ? ', Eintrag vorhanden' : ''}',
                   selected: today,
                   child: Center(
                     child: InkWell(
@@ -116,20 +122,29 @@ class _CycleCalendarState extends State<CycleCalendar> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: period ? AppColors.burntOrange : null,
-                          border: today
-                              ? Border.all(color: AppColors.fontColor)
+                          border: today || predicted
+                              ? Border.all(
+                                  color: today
+                                      ? AppColors.fontColor
+                                      : AppColors.primary,
+                                  width: predicted ? 2 : 1,
+                                )
                               : null,
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              '$day',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: period
-                                    ? Colors.white
-                                    : AppColors.fontColor,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$day${spotting ? '·' : ''}${predicted ? '◇' : ''}',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: period
+                                      ? Colors.white
+                                      : AppColors.fontColor,
+                                ),
                               ),
                             ),
                             SizedBox(
@@ -159,4 +174,25 @@ class _CycleCalendarState extends State<CycleCalendar> {
       ],
     );
   }
+}
+
+class CalendarLegend extends StatelessWidget {
+  const CalendarLegend({super.key});
+  @override
+  Widget build(BuildContext context) => const Wrap(
+    spacing: 12,
+    runSpacing: 6,
+    children: [
+      Text(
+        '● Blutung erfasst',
+        style: TextStyle(fontSize: 11, color: AppColors.burntOrange),
+      ),
+      Text('· Schmierblutung', style: TextStyle(fontSize: 11)),
+      Text(
+        '◇ Geschätzter Beginn',
+        style: TextStyle(fontSize: 11, color: AppColors.primary),
+      ),
+      Text('Punkt unter Datum: Eintrag', style: TextStyle(fontSize: 11)),
+    ],
+  );
 }

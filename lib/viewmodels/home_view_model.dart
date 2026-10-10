@@ -1,24 +1,12 @@
-import 'package:flutter/foundation.dart';
-import '../models/cycle_data.dart';
+import 'cycle_view_model.dart';
 import 'home_state.dart';
 
-class HomeViewModel extends ChangeNotifier {
-  HomeViewModel({CycleData? initialData})
-    : _state = initialData == null
-          ? const HomeEmpty()
-          : HomeSuccess(initialData);
-
-  void setCycle(CycleData? cycle) {
-    _state = cycle == null ? const HomeEmpty() : HomeSuccess(cycle);
-    notifyListeners();
-  }
-
-  HomeState _state;
-  HomeState get state => _state;
-  Set<DateTime> _entryDays = const {};
-  Set<DateTime> get entryDays => _entryDays;
-  void setEntryDays(Set<DateTime> days) {
-    _entryDays = Set.unmodifiable(days);
-    notifyListeners();
-  }
+class HomeViewModel extends CycleViewModel {
+  HomeViewModel({required super.repository, super.calculator, super.clock});
+  HomeState get state => isLoading
+      ? const HomeLoading()
+      : error != null
+      ? HomeError(error!)
+      : HomeSuccess(summary);
+  Set<DateTime> get entryDays => summary.entryDays;
 }

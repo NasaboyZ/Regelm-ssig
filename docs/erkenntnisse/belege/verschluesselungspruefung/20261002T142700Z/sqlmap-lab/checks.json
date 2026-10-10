@@ -1,0 +1,97 @@
+[
+  {
+    "test": "Dateikopie ohne SQLCipher-Schlüssel abgewiesen",
+    "status": "PASS",
+    "detail": "DatabaseError: file is not a database"
+  },
+  {
+    "test": "Dateikopie mit falschem SQLCipher-Schlüssel abgewiesen",
+    "status": "PASS",
+    "detail": "DatabaseError: file is not a database"
+  },
+  {
+    "test": "Gewöhnliches SQLite kann die Dateikopie nicht lesen",
+    "status": "PASS",
+    "detail": "DatabaseError: file is not a database"
+  },
+  {
+    "test": "Dateien enthalten keine bekannten Klartextmarker",
+    "status": "PASS",
+    "detail": "Kein SQLite-Klartextheader und keine Testmarker; nur ergänzende Indizien."
+  },
+  {
+    "test": "Nur Datenbankschlüssel: verschlüsselte Payload lesbar",
+    "status": "PASS",
+    "detail": "Korrekte Passphrase öffnet Tabellen; id und AES-BLOB sind sichtbar."
+  },
+  {
+    "test": "Beide Debug-Schlüssel: Testeintrag entschlüsselt",
+    "status": "PASS",
+    "detail": "Dateikopie mit beiden öffentlichen Debug-Schlüsseln vollständig entschlüsselt."
+  },
+  {
+    "test": "Falscher AES-Schlüssel abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Manipulation an Nonce abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Manipulation an Ciphertext abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Manipulation an Tag abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Vertauschte Tabellenbindung abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Vertauschte Zeilenbindung abgewiesen",
+    "status": "PASS",
+    "detail": "InvalidTag: Authentication rejected"
+  },
+  {
+    "test": "Unbekannte Payloadversion abgewiesen",
+    "status": "PASS",
+    "detail": "ValueError: Unsupported or truncated payload"
+  },
+  {
+    "test": "Abgeschnittene Payload abgewiesen",
+    "status": "PASS",
+    "detail": "ValueError: Unsupported or truncated payload"
+  },
+  {
+    "test": "HTTP-Gegenproben vor sqlmap",
+    "status": "PASS",
+    "detail": "Alle drei Routen erreichbar; Baseline liefert nur Kontrollzeile 2."
+  },
+  {
+    "test": "sqlmap: vulnerable/plain",
+    "status": "PASS",
+    "detail": "sqlmap extrahiert Zeile 1 im Klartext trotz SQLCipher-Dateiverschlüsselung (Hex ist nur Transportdarstellung)."
+  },
+  {
+    "test": "sqlmap: vulnerable/encrypted",
+    "status": "PASS",
+    "detail": "sqlmap extrahiert AES-BLOB. Separater Schritt mit öffentlichem Debug-AES-Schlüssel entschlüsselt den Testeintrag."
+  },
+  {
+    "test": "sqlmap: safe/encrypted",
+    "status": "PASS",
+    "detail": "Keine Injection im Umfang level=1, risk=1, technique=BU erkannt; kein allgemeiner Sicherheitsbeweis."
+  },
+  {
+    "test": "Angriffsversuche verändern keine Datenbankdatei",
+    "status": "PASS",
+    "detail": "SHA-256 aller drei geschlossenen Datenbankdateien unverändert."
+  }
+]

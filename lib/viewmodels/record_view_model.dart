@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/day_entry.dart';
+import '../models/period_entry.dart';
 import '../models/tracking_catalog.dart';
 import '../repositories/tracking_repository.dart';
 import '../services/appointment_reminders.dart';
@@ -30,8 +31,16 @@ class RecordViewModel extends ChangeNotifier {
     required this.repository,
     required this.reminders,
     DateTime? date,
-  }) : _selectedDay = localDay(date ?? DateTime.now());
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now,
+       _selectedDay = localDay(date ?? DateTime.now());
   final TrackingRepository repository;
+  final DateTime Function() _clock;
+  DateTime get today => localDay(_clock());
+  final List<PeriodEntry> _periods = [];
+  List<PeriodEntry> get periods => List.unmodifiable(_periods);
+  int get selectedCount =>
+      entry.count + _periods.where((p) => p.contains(selectedDay)).length;
   final AppointmentReminders reminders;
   RecordState _state = const RecordLoading();
   RecordState get state => _state;
@@ -49,8 +58,10 @@ class RecordViewModel extends ChangeNotifier {
   String? reminderWarning;
   DayEntry get entry => _days[selectedDay] ?? DayEntry(date: selectedDay);
   Map<String, String> get customCategories => Map.unmodifiable(_categories);
-  Set<DateTime> get entryDays =>
-      _days.values.where((d) => d.hasData).map((d) => d.date).toSet();
+  Set<DateTime> get entryDays => {
+    ..._days.values.where((d) => d.hasData).map((d) => d.date),
+    ..._periods.expand((p) => p.days),
+  };
   List<DateTime> get week {
     final monday = DateTime(
       selectedDay.year,
@@ -76,6 +87,9 @@ class RecordViewModel extends ChangeNotifier {
       _days
         ..clear()
         ..addAll(repository.snapshot.days);
+      _periods
+        ..clear()
+        ..addAll(repository.snapshot.periods);
       _categories
         ..clear()
         ..addAll(repository.snapshot.categories);
@@ -123,6 +137,8 @@ class RecordViewModel extends ChangeNotifier {
       (n, g) => n + (entry.selections[g.id]?.length ?? 0),
     );
     count += entry.customValues[category.id]?.length ?? 0;
+    if (category.id == 'bleeding')
+      count += _periods.where((p) => p.contains(selectedDay)).length;
     if (category.id == 'notes' && entry.note.trim().isNotEmpty) count++;
     if (category.id == 'appointments') count += entry.appointments.length;
     if (category.id == 'measurements') {
@@ -235,6 +251,28 @@ class RecordViewModel extends ChangeNotifier {
       appointments: entry.appointments.where((a) => a.id != id).toList(),
     ),
   );
+  String? putPeriod(PeriodEntry period) {
+    if (!canEdit) return 'Bitte warte, bis deine Einträge geladen sind.';
+    final updated = [..._periods.where((p) => p.id != period.id), period];
+    final error = validatePeriods(updated, today: today);
+    if (error != null) return error;
+    _periods
+      ..clear()
+      ..addAll(updated..sort((a, b) => a.start.compareTo(b.start)));
+    _dirty = true;
+    saveError = null;
+    _notify();
+    return null;
+  }
+
+  void removePeriod(String id) {
+    if (!canEdit) return;
+    _periods.removeWhere((p) => p.id == id);
+    _dirty = true;
+    saveError = null;
+    _notify();
+  }
+
   void clearDay() {
     _measurementInputs.removeWhere(
       (key, _) => key.startsWith('${dayKey(selectedDay)}:'),
@@ -244,6 +282,12 @@ class RecordViewModel extends ChangeNotifier {
 
   Future<bool> save() async {
     if (!canEdit) return false;
+    final periodError = validatePeriods(_periods, today: today);
+    if (periodError != null) {
+      saveError = periodError;
+      _notify();
+      return false;
+    }
     for (final input in _measurementInputs.entries) {
       if (measurementError(input.key.split(':').last, input.value) != null) {
         _selectedDay = DateTime.parse(input.key.split(':').first);
@@ -259,6 +303,8 @@ class RecordViewModel extends ChangeNotifier {
     final snapshot = TrackingSnapshot(
       days: {for (final d in _days.values.where((d) => d.hasData)) d.date: d},
       categories: _categories,
+      periods: _periods,
+      forecastConsent: repository.snapshot.forecastConsent,
     );
     try {
       await repository.save(snapshot);

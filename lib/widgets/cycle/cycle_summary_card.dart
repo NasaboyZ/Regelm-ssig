@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../models/cycle_data.dart';
-import '../../theme/app_colors.dart';
+import '../../models/cycle_summary.dart';
 import '../app_card.dart';
 import 'cycle_timeline.dart';
 import 'cycle_calendar.dart';
+
+String cycleDateLabel(DateTime date) =>
+    '${date.day}. ${monthNames[date.month - 1]} ${date.year}';
 
 class CycleSummaryCard extends StatelessWidget {
   const CycleSummaryCard({
     super.key,
     required this.cycle,
-    required this.onDetails,
+    this.onDetails,
+    this.showCalculationDetails = false,
   });
-  final CycleData cycle;
-  final VoidCallback onDetails;
+  final CycleSummary cycle;
+  final VoidCallback? onDetails;
+  final bool showCalculationDetails;
   @override
   Widget build(BuildContext context) => AppCard(
     child: Column(
@@ -26,38 +30,114 @@ class CycleSummaryCard extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
-            TextButton(onPressed: onDetails, child: const Text('Details ›')),
+            if (onDetails != null)
+              TextButton(onPressed: onDetails, child: const Text('Details ›')),
           ],
         ),
         Text(
-          'Begonnen am ${cycle.start.day}. ${monthNames[cycle.start.month - 1]}',
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          cycle.currentStart == null
+              ? 'Periodenbeginn noch nicht erfasst'
+              : 'Begonnen am ${cycleDateLabel(cycle.currentStart!)}',
         ),
-        Text(
-          'Zyklustag ${cycle.day} von durchschnittlich ${cycle.length} Tagen',
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
-        ),
-        CycleTimeline(
-          day: cycle.day,
-          length: cycle.length,
-          periodLength: cycle.periodLength,
-        ),
+        if (cycle.currentCycleDay != null)
+          Text('Zyklustag ${cycle.currentCycleDay}'),
+        if (cycle.currentStart != null) CycleTimeline(summary: cycle),
         const Divider(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cycleAverage = _AverageMetric(
+              label: 'Zyklus',
+              average: cycle.averageCycleLength,
+              basis:
+                  'Aus ${cycle.eligibleCycleCount} ${cycle.eligibleCycleCount == 1 ? 'Zyklus' : 'Zyklen'}',
+            );
+            final periodAverage = _AverageMetric(
+              label: 'Periode',
+              average: cycle.averagePeriodLength,
+              basis:
+                  'Aus ${cycle.completedPeriodCount} ${cycle.completedPeriodCount == 1 ? 'Periode' : 'Perioden'}',
+            );
+            if (constraints.maxWidth < 280 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  cycleAverage,
+                  const SizedBox(height: 12),
+                  periodAverage,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: cycleAverage),
+                const SizedBox(height: 28, child: VerticalDivider(width: 20)),
+                Expanded(child: periodAverage),
+              ],
+            );
+          },
+        ),
+        if (showCalculationDetails) ...[
+          const SizedBox(height: 12),
+          Text('${cycle.eligibleCycleCount} geeignete abgeschlossene Zyklen'),
+          if (cycle.predictionStatus == PredictionStatus.general)
             Text(
-              'Ø Zyklus ${cycle.length} Tage',
-              style: const TextStyle(fontSize: 11),
+              '${cycle.eligibleCycleCount} von 3 Zyklen für eine persönliche Schätzung vorhanden.',
             ),
-            const SizedBox(height: 12, child: VerticalDivider()),
+          if (cycle.estimatedCycleLength != null)
             Text(
-              'Ø Periode ${cycle.periodLength} Tage',
-              style: const TextStyle(fontSize: 11),
+              cycle.predictionStatus == PredictionStatus.general
+                  ? 'Allgemeiner Richtwert: 28 Tage'
+                  : 'Geschätzte Zykluslänge (Median): ${cycle.estimatedCycleLength} Tage',
+            ),
+          if (cycle.historicalRangeStart != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Nach deinen bisherigen Zykluslängen: ${cycleDateLabel(cycle.historicalRangeStart!)} bis ${cycleDateLabel(cycle.historicalRangeEnd!)}',
+            ),
+            const Text(
+              'Dieser Vergleich zeigt bisherige Schwankungen, kein statistisch abgesichertes Vorhersageintervall.',
+              style: TextStyle(fontSize: 12),
             ),
           ],
-        ),
+        ],
       ],
     ),
   );
+}
+
+class _AverageMetric extends StatelessWidget {
+  const _AverageMetric({
+    required this.label,
+    required this.average,
+    required this.basis,
+  });
+  final String label;
+  final double? average;
+  final String basis;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = average?.round();
+    return Column(
+      children: [
+        Text(
+          days == null
+              ? 'Ø $label –'
+              : 'Ø $label ≈ $days ${days == 1 ? 'Tag' : 'Tage'}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          days == null ? 'Noch keine vollständigen Daten' : basis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
 }

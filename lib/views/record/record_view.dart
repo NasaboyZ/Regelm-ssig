@@ -27,7 +27,7 @@ class RecordView extends StatefulWidget {
 
 class _RecordViewState extends State<RecordView> {
   RecordViewModel get vm => widget.viewModel;
-  final Set<String> _expanded = {'mood'};
+  final Set<String> _expanded = {'bleeding'};
   int _formRevision = 0;
   bool _leaving = false;
   @override
@@ -96,27 +96,6 @@ class _RecordViewState extends State<RecordView> {
     }
   }
 
-  Future<void> _addText({String? categoryId}) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => _TextEntryDialog(
-        title: categoryId == null
-            ? 'Eigene Kategorie erstellen'
-            : 'Eigenen Eintrag hinzufügen',
-        label: categoryId == null ? 'Name der Kategorie' : 'Dein Eintrag',
-        onSubmit: (value) {
-          final error = categoryId == null
-              ? vm.addCategory(value)
-              : vm.addCustomValue(categoryId, value);
-          if (error == null && categoryId == null) {
-            _expanded.add(vm.customCategories.keys.last);
-          }
-          return error;
-        },
-      ),
-    );
-  }
-
   Future<void> _appointment([DayAppointment? appointment]) async {
     final result = await showDialog<DayAppointment>(
       context: context,
@@ -132,7 +111,7 @@ class _RecordViewState extends State<RecordView> {
       builder: (context) => AlertDialog(
         title: const Text('Tag leeren?'),
         content: const Text(
-          'Alle Angaben für den ausgewählten Tag werden entfernt. Die Änderung wird erst beim Speichern übernommen.',
+          'Die Tagesangaben für den ausgewählten Tag werden entfernt. Separate Blutungseinträge bleiben erhalten. Die Änderung wird erst beim Speichern übernommen.',
         ),
         actions: [
           TextButton(
@@ -286,32 +265,6 @@ class _RecordViewState extends State<RecordView> {
                                     const [],
                                   ),
                                 ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  onPressed: () => _addText(),
-                                  style: OutlinedButton.styleFrom(
-                                    alignment: Alignment.centerLeft,
-                                    foregroundColor: AppColors.fontColor,
-                                    side: const BorderSide(
-                                      color: Color(0xFFCBC5C5),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    minimumSize: const Size(0, 44),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.add_circle_outline,
-                                    size: 21,
-                                    color: AppColors.muted,
-                                  ),
-                                  label: const Text(
-                                    'Eigene Kategorie erstellen',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -363,7 +316,7 @@ class _RecordViewState extends State<RecordView> {
             child: Text(
               vm.isSaving
                   ? 'Wird gespeichert …'
-                  : 'Eintrag speichern${vm.entry.count > 0 ? ' · ${vm.entry.count}' : ''}',
+                  : 'Eintrag speichern${vm.selectedCount > 0 ? ' · ${vm.selectedCount}' : ''}',
             ),
           ),
           TextButton(
@@ -539,7 +492,8 @@ class _RecordViewState extends State<RecordView> {
                       label: const Text('Termin hinzufügen'),
                     ),
                   ],
-                  if ((vm.entry.customValues[category.id] ?? []).isNotEmpty)
+                  if (category.id != 'bleeding' &&
+                      (vm.entry.customValues[category.id] ?? []).isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Wrap(
@@ -558,25 +512,6 @@ class _RecordViewState extends State<RecordView> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 6),
-                  OutlinedButton.icon(
-                    onPressed: () => _addText(categoryId: category.id),
-                    style: OutlinedButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      foregroundColor: AppColors.burntOrange,
-                      side: const BorderSide(color: AppColors.burntOrange),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add, size: 19),
-                    label: Text(
-                      category.id == 'mood'
-                          ? 'Eigene Stimmung hinzufügen'
-                          : 'Eigenen Eintrag hinzufügen',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -800,50 +735,4 @@ class _DayStripState extends State<_DayStrip> {
       ),
     );
   }
-}
-
-class _TextEntryDialog extends StatefulWidget {
-  const _TextEntryDialog({
-    required this.title,
-    required this.label,
-    required this.onSubmit,
-  });
-  final String title;
-  final String label;
-  final String? Function(String) onSubmit;
-  @override
-  State<_TextEntryDialog> createState() => _TextEntryDialogState();
-}
-
-class _TextEntryDialogState extends State<_TextEntryDialog> {
-  String _value = '';
-  String? _error;
-  void _submit() {
-    final error = widget.onSubmit(_value);
-    if (error == null) {
-      Navigator.pop(context);
-    } else {
-      setState(() => _error = error);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.title),
-    content: TextField(
-      autofocus: true,
-      maxLength: 120,
-      textCapitalization: TextCapitalization.sentences,
-      decoration: InputDecoration(labelText: widget.label, errorText: _error),
-      onChanged: (v) => _value = v,
-      onSubmitted: (_) => _submit(),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Abbrechen'),
-      ),
-      FilledButton(onPressed: _submit, child: const Text('Hinzufügen')),
-    ],
-  );
 }

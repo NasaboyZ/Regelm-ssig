@@ -1,0 +1,5 @@
+Analyzing lib, test, integration_test...
+
+warning - integration_test/encryption_evidence_test.dart:10:8 - Unused import: 'package:regelmaessig/services/tracking_storage.dart'. Try removing the import directive. - unused_import
+
+1 issue found.

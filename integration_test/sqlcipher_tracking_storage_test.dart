@@ -26,6 +26,15 @@ class _Reminders implements AppointmentReminders {
   Future<String?> synchronize(TrackingSnapshot snapshot) async => null;
 }
 
+Future<void> _openMood(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('category-bleeding')));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(const ValueKey('category-mood')));
+  await tester.tap(find.byKey(const ValueKey('category-mood')));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(const ValueKey('mood-calm')));
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const testKey = 'integration-test-only-key';
@@ -369,6 +378,7 @@ void main() {
         );
         await tester.tap(find.text('Heute erfassen'));
         await tester.pumpAndSettle();
+        await _openMood(tester);
         await tester.tap(find.text('Ruhig'));
         await tester.pump();
         await tester.tap(find.text('Eintrag speichern · 1'));
@@ -604,6 +614,7 @@ void main() {
       );
       await tester.tap(find.text('Öffnen'));
       await tester.pumpAndSettle();
+      await _openMood(tester);
       await tester.tap(find.text('Ruhig'));
       await tester.pump();
       await tester.tap(find.text('Eintrag speichern · 1'));
@@ -622,6 +633,7 @@ void main() {
         MaterialApp(home: RecordView(viewModel: freshVm)),
       );
       await tester.pumpAndSettle();
+      await _openMood(tester);
       expect(
         tester
             .widget<FilterChip>(find.byKey(const ValueKey('mood-calm')))
