@@ -4,10 +4,14 @@ import 'services/appointment_reminders.dart';
 import 'services/debug_tracking_keys.dart';
 import 'services/sqlcipher_tracking_storage.dart';
 import 'services/tracking_storage.dart';
+import 'services/cycle_calculation_service.dart';
 
 void configureDependencies({TrackingStorage? trackingStorage}) {
   final services = GetIt.instance;
   if (services.isRegistered<TrackingRepository>()) return;
+  services.registerSingleton<CycleCalculationService>(
+    const CycleCalculationService(),
+  );
   services.registerLazySingleton<TrackingStorage>(
     () =>
         trackingStorage ??

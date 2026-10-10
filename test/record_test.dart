@@ -277,7 +277,7 @@ void main() {
         tester.widget<CycleCalendar>(find.byType(CycleCalendar)).entryDays,
         {localDay(DateTime.now())},
       );
-      await tester.tap(find.text('Heute erfassen'));
+      await tester.tap(find.text('Heute speichern'));
       await tester.pumpAndSettle();
       expect(
         tester

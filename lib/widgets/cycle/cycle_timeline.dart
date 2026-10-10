@@ -1,48 +1,49 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../models/cycle_summary.dart';
+import '../../models/calendar_date.dart';
 import '../../theme/app_colors.dart';
 
 class CycleTimeline extends StatelessWidget {
-  const CycleTimeline({
-    super.key,
-    required this.day,
-    required this.length,
-    required this.periodLength,
-  });
-  final int day;
-  final int length;
-  final int periodLength;
+  const CycleTimeline({super.key, required this.summary});
+  final CycleSummary summary;
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Zyklustag $day von $length',
-    child: SizedBox(
-      height: 40,
-      child: Row(
-        children: List.generate(
-          length,
-          (index) => Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1.2),
+  Widget build(BuildContext context) {
+    final start = summary.currentStart;
+    if (start == null) return const SizedBox.shrink();
+    final day = summary.currentCycleDay!;
+    final length = math.max(day, summary.estimatedCycleLength ?? day);
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: length,
+        itemBuilder: (context, index) {
+          final date = addCalendarDays(start, index);
+          final bleeding = summary.periodDays.contains(date);
+          final today = index + 1 == day;
+          return Semantics(
+            label:
+                'Zyklustag ${index + 1}${today ? ', Heute' : ''}${bleeding ? ', Blutung erfasst' : ''}',
+            child: SizedBox(
+              width: 12,
               child: Column(
                 children: [
                   SizedBox(
-                    height: 16,
-                    child: index + 1 == day
-                        ? const OverflowBox(
-                            maxWidth: 30,
-                            child: Text('Heute', style: TextStyle(fontSize: 8)),
-                          )
+                    height: 14,
+                    child: today
+                        ? const Icon(Icons.arrow_drop_down, size: 14)
                         : null,
                   ),
                   Container(
-                    height: 20,
+                    height: 22,
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
                     decoration: BoxDecoration(
-                      color: index < periodLength
+                      color: bleeding
                           ? AppColors.burntOrange
-                          : index + 1 < day
-                          ? AppColors.pluto
                           : const Color(0xFFE4E4E9),
-                      borderRadius: BorderRadius.circular(6),
-                      border: index + 1 == day
+                      borderRadius: BorderRadius.circular(5),
+                      border: today
                           ? Border.all(color: AppColors.fontColor)
                           : null,
                     ),
@@ -50,9 +51,9 @@ class CycleTimeline extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
-    ),
-  );
+    );
+  }
 }

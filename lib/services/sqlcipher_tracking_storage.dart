@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 import '../models/day_entry.dart';
+import '../models/period_entry.dart';
 import 'tracking_payload_cipher.dart';
 import 'tracking_storage.dart';
 
@@ -50,7 +51,7 @@ class SqlCipherTrackingStorage implements TrackingStorage {
     final db = await openDatabase(
       await _resolvePath(),
       password: key,
-      version: 2,
+      version: 3,
       singleInstance: false,
       onConfigure: (db) async {
         final version = await db.rawQuery('PRAGMA cipher_version');
@@ -63,15 +64,22 @@ class SqlCipherTrackingStorage implements TrackingStorage {
       onCreate: (db, version) => _createSchema(db, cipher),
       // sqflite runs schema callbacks and user_version changes in a transaction.
       onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion != 1 || newVersion != 2) {
+        if (newVersion != 3 || (oldVersion != 1 && oldVersion != 2)) {
           throw StateError('Unsupported tracking schema version');
         }
-        final snapshot = await _readLegacy(db);
-        final rows = await _encryptSnapshot(snapshot, cipher);
-        await db.execute('DROP TABLE day_entries');
-        await db.execute('DROP TABLE custom_categories');
-        await _createSchema(db, cipher);
-        await _replaceRows(db, rows);
+        if (oldVersion == 1) {
+          final snapshot = await _readLegacy(db);
+          final rows = await _encryptSnapshot(snapshot, cipher);
+          await db.execute('DROP TABLE day_entries');
+          await db.execute('DROP TABLE custom_categories');
+          await _createSchema(db, cipher);
+          await _replaceRows(db, rows);
+        } else {
+          await _verifyKey(db, cipher);
+          await _createCycleTables(db);
+          // Authenticate existing records before committing the migration.
+          await _readSnapshot(db, cipher);
+        }
       },
       onDowngrade: (db, oldVersion, newVersion) async {
         throw StateError('Unsupported tracking schema version');
@@ -103,6 +111,7 @@ class SqlCipherTrackingStorage implements TrackingStorage {
         )
       ''');
     }
+    await _createCycleTables(db);
     await db.insert('tracking_metadata', {
       'id': 1,
       'payload': await cipher.encrypt(
@@ -111,6 +120,14 @@ class SqlCipherTrackingStorage implements TrackingStorage {
         id: 1,
       ),
     });
+  }
+
+  Future<void> _createCycleTables(DatabaseExecutor db) async {
+    for (final table in ['period_entries', 'tracking_settings']) {
+      await db.execute(
+        'CREATE TABLE $table (id INTEGER PRIMARY KEY NOT NULL, payload BLOB NOT NULL)',
+      );
+    }
   }
 
   Future<void> _verifyKey(
@@ -187,7 +204,14 @@ class SqlCipherTrackingStorage implements TrackingStorage {
     await _verifyKey(db, cipher);
     final days = <DateTime, DayEntry>{};
     final categories = <String, String>{};
-    for (final table in ['day_entries', 'custom_categories']) {
+    final periods = <PeriodEntry>[];
+    var consent = ForecastConsent.unknown;
+    for (final table in [
+      'day_entries',
+      'custom_categories',
+      'period_entries',
+      'tracking_settings',
+    ]) {
       for (final row in await db.query(table, orderBy: 'id')) {
         final bytes = await cipher.decrypt(
           _payload(row),
@@ -207,6 +231,14 @@ class SqlCipherTrackingStorage implements TrackingStorage {
             throw const FormatException('Duplicate tracking date');
           }
           days[day.date] = day;
+        } else if (table == 'period_entries') {
+          periods.add(PeriodEntry.fromJson(json));
+        } else if (table == 'tracking_settings') {
+          if (row['id'] != 1)
+            throw const FormatException('Invalid settings record');
+          consent = ForecastConsent.values.byName(
+            json['forecastConsent'] as String,
+          );
         } else {
           final id = json['id'];
           final name = json['name'];
@@ -217,14 +249,27 @@ class SqlCipherTrackingStorage implements TrackingStorage {
         }
       }
     }
-    return TrackingSnapshot(days: days, categories: categories);
+    if (validatePeriods(periods) != null)
+      throw const FormatException('Invalid period records');
+    return TrackingSnapshot(
+      days: days,
+      categories: categories,
+      periods: periods,
+      forecastConsent: consent,
+    );
   }
 
   Future<Map<String, List<Map<String, Object?>>>> _encryptSnapshot(
     TrackingSnapshot snapshot,
     TrackingPayloadCipher cipher,
   ) async {
+    if (validatePeriods(snapshot.periods) != null)
+      throw const FormatException('Invalid period records');
     final values = <String, List<Map<String, dynamic>>>{
+      'period_entries': snapshot.periods.map((p) => p.toJson()).toList(),
+      'tracking_settings': [
+        {'forecastConsent': snapshot.forecastConsent.name},
+      ],
       'day_entries': [],
       'custom_categories': [
         for (final entry in snapshot.categories.entries)

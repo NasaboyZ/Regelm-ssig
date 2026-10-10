@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../dependencies.dart';
@@ -5,7 +6,8 @@ import '../repositories/tracking_repository.dart';
 import '../services/appointment_reminders.dart';
 import '../viewmodels/record_view_model.dart';
 import 'record/record_view.dart';
-import '../viewmodels/home_state.dart';
+import '../services/cycle_calculation_service.dart';
+import '../widgets/cycle/forecast_settings.dart';
 import '../viewmodels/home_view_model.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../viewmodels/cycle_history_view_model.dart';
@@ -21,10 +23,11 @@ class MainView extends StatefulWidget {
   State<MainView> createState() => _MainViewState();
 }
 
-class _MainViewState extends State<MainView> {
+class _MainViewState extends State<MainView> with WidgetsBindingObserver {
   int _selectedIndex = 0;
-  final _homeViewModel = HomeViewModel();
-  final _cycleHistoryViewModel = CycleHistoryViewModel();
+  late final HomeViewModel _homeViewModel;
+  late final CycleHistoryViewModel _cycleHistoryViewModel;
+  Timer? _dayTimer;
   late final TrackingRepository _tracking;
   late final AppointmentReminders _reminders;
   @override
@@ -34,20 +37,47 @@ class _MainViewState extends State<MainView> {
     _tracking =
         widget.trackingRepository ?? GetIt.instance<TrackingRepository>();
     _reminders = widget.reminders ?? GetIt.instance<AppointmentReminders>();
-    _tracking.addListener(_syncTracking);
-    _syncTracking();
-    // The record screen presents load failures with a retry action.
-    _tracking.load().catchError((Object _) {});
+    final calculator = GetIt.instance<CycleCalculationService>();
+    _homeViewModel = HomeViewModel(
+      repository: _tracking,
+      calculator: calculator,
+    );
+    _cycleHistoryViewModel = CycleHistoryViewModel(
+      repository: _tracking,
+      calculator: calculator,
+    );
+    _homeViewModel.load();
+    _cycleHistoryViewModel.load();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleDayRefresh();
   }
 
-  void _syncTracking() {
-    _homeViewModel.setEntryDays(_tracking.snapshot.entryDays);
-    _cycleHistoryViewModel.setEntryDays(_tracking.snapshot.entryDays);
+  void _scheduleDayRefresh() {
+    _dayTimer?.cancel();
+    final now = DateTime.now();
+    _dayTimer = Timer(
+      DateTime(now.year, now.month, now.day + 1).difference(now),
+      () {
+        _homeViewModel.refresh();
+        _cycleHistoryViewModel.refresh();
+        _scheduleDayRefresh();
+      },
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _homeViewModel.refresh();
+      _cycleHistoryViewModel.refresh();
+      _scheduleDayRefresh();
+    }
   }
 
   @override
   void dispose() {
-    _tracking.removeListener(_syncTracking);
+    WidgetsBinding.instance.removeObserver(this);
+    _dayTimer?.cancel();
     _homeViewModel.dispose();
     _cycleHistoryViewModel.dispose();
     super.dispose();
@@ -68,22 +98,26 @@ class _MainViewState extends State<MainView> {
   }
 
   void _details() {
-    final state = _homeViewModel.state;
-    if (state is! HomeSuccess) return;
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (context) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CycleSummaryCard(
-                cycle: state.cycle,
-                onDetails: () => Navigator.pop(context),
-              ),
-            ],
+          child: ListenableBuilder(
+            listenable: _homeViewModel,
+            builder: (context, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CycleSummaryCard(
+                  cycle: _homeViewModel.summary,
+                  showCalculationDetails: true,
+                ),
+                const SizedBox(height: 16),
+                ForecastSettings(viewModel: _homeViewModel),
+              ],
+            ),
           ),
         ),
       ),

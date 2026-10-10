@@ -132,7 +132,7 @@ class _RecordViewState extends State<RecordView> {
       builder: (context) => AlertDialog(
         title: const Text('Tag leeren?'),
         content: const Text(
-          'Alle Angaben für den ausgewählten Tag werden entfernt. Die Änderung wird erst beim Speichern übernommen.',
+          'Die Tagesangaben für den ausgewählten Tag werden entfernt. Separate Blutungseinträge bleiben erhalten. Die Änderung wird erst beim Speichern übernommen.',
         ),
         actions: [
           TextButton(
@@ -363,7 +363,7 @@ class _RecordViewState extends State<RecordView> {
             child: Text(
               vm.isSaving
                   ? 'Wird gespeichert …'
-                  : 'Eintrag speichern${vm.entry.count > 0 ? ' · ${vm.entry.count}' : ''}',
+                  : 'Eintrag speichern${vm.selectedCount > 0 ? ' · ${vm.selectedCount}' : ''}',
             ),
           ),
           TextButton(
@@ -539,7 +539,8 @@ class _RecordViewState extends State<RecordView> {
                       label: const Text('Termin hinzufügen'),
                     ),
                   ],
-                  if ((vm.entry.customValues[category.id] ?? []).isNotEmpty)
+                  if (category.id != 'bleeding' &&
+                      (vm.entry.customValues[category.id] ?? []).isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Wrap(
@@ -558,25 +559,27 @@ class _RecordViewState extends State<RecordView> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 6),
-                  OutlinedButton.icon(
-                    onPressed: () => _addText(categoryId: category.id),
-                    style: OutlinedButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      foregroundColor: AppColors.burntOrange,
-                      side: const BorderSide(color: AppColors.burntOrange),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(9),
+                  if (category.id != 'bleeding') ...[
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
+                      onPressed: () => _addText(categoryId: category.id),
+                      style: OutlinedButton.styleFrom(
+                        alignment: Alignment.centerLeft,
+                        foregroundColor: AppColors.burntOrange,
+                        side: const BorderSide(color: AppColors.burntOrange),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add, size: 19),
+                      label: Text(
+                        category.id == 'mood'
+                            ? 'Eigene Stimmung hinzufügen'
+                            : 'Eigenen Eintrag hinzufügen',
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
-                    icon: const Icon(Icons.add, size: 19),
-                    label: Text(
-                      category.id == 'mood'
-                          ? 'Eigene Stimmung hinzufügen'
-                          : 'Eigenen Eintrag hinzufügen',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),

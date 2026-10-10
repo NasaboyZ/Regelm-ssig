@@ -21,6 +21,8 @@ Hier stehen die Anleitungen zum Starten, Prüfen und Anschauen der App-Daten.
 
 ## Anleitungen
 
+- [Ein Jahr Zyklus-Dummy-Daten](zyklus_demo.md): Demo im Simulator starten,
+  erwartete Rechenergebnisse und MVVM-Tests.
 - [Verschlüsselungsprüfung vom 02.10.2026](../erkenntnisse/004_verschluesselungspruefung.md):
   echte Flutter-Datei, unabhängige Entschlüsselungsversuche, sqlmap-Labor und Rohbelege.
 - [Labor selbst im Terminal starten](../../../angreifer/README.md#selbst-im-terminal-starten):

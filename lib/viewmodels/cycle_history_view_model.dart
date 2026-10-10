@@ -1,27 +1,34 @@
-import 'package:flutter/foundation.dart';
+import 'cycle_view_model.dart';
 
 DateTime _date(DateTime value) => DateTime(value.year, value.month, value.day);
 
 /// Calendar navigation and data stay independent of Flutter widgets.
-class CycleHistoryViewModel extends ChangeNotifier {
+class CycleHistoryViewModel extends CycleViewModel {
   CycleHistoryViewModel({
+    super.repository,
+    super.calculator,
     DateTime Function()? clock,
     Set<DateTime> periodDays = const {},
     Set<DateTime> predictedDays = const {},
     Set<DateTime> entryDays = const {},
-  }) : _clock = clock ?? DateTime.now,
-       periodDays = Set.unmodifiable(periodDays.map(_date)),
-       predictedDays = Set.unmodifiable(predictedDays.map(_date)),
-       _entryDays = Set.unmodifiable(entryDays.map(_date)) {
+  }) : _periodDays = Set.unmodifiable(periodDays.map(_date)),
+       _predictedDays = Set.unmodifiable(predictedDays.map(_date)),
+       _entryDays = Set.unmodifiable(entryDays.map(_date)),
+       super(clock: clock) {
     final now = today;
     _month = DateTime(now.year, now.month);
   }
 
-  final DateTime Function() _clock;
-  final Set<DateTime> periodDays;
-  final Set<DateTime> predictedDays;
+  final Set<DateTime> _periodDays;
+  final Set<DateTime> _predictedDays;
+  Set<DateTime> get periodDays =>
+      repository == null ? _periodDays : summary.periodDays;
+  Set<DateTime> get predictedDays =>
+      repository == null ? _predictedDays : summary.predictedDays;
+  Set<DateTime> get spottingDays => summary.spottingDays;
   Set<DateTime> _entryDays;
-  Set<DateTime> get entryDays => _entryDays;
+  Set<DateTime> get entryDays =>
+      repository == null ? _entryDays : summary.entryDays;
   void setEntryDays(Set<DateTime> days) {
     _entryDays = Set.unmodifiable(days.map(_date));
     notifyListeners();
@@ -30,7 +37,7 @@ class CycleHistoryViewModel extends ChangeNotifier {
   late DateTime _month;
   DateTime? _selectedDay;
   DateTime? get selectedDay => _selectedDay;
-  DateTime get today => _date(_clock());
+  DateTime get today => _date(clock());
   DateTime get month => _month;
   bool get hasEntries => periodDays.isNotEmpty || entryDays.isNotEmpty;
   List<DateTime> get nearbyMonths => List.generate(
