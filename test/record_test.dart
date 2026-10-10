@@ -277,7 +277,7 @@ void main() {
         tester.widget<CycleCalendar>(find.byType(CycleCalendar)).entryDays,
         {localDay(DateTime.now())},
       );
-      await tester.tap(find.text('Heute speichern'));
+      await tester.tap(find.text('Heute erfassen'));
       await tester.pumpAndSettle();
       expect(
         tester
@@ -291,53 +291,41 @@ void main() {
     },
   );
 
-  testWidgets(
-    'custom category is empty until its first custom value; back protects drafts',
-    (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => RecordView(viewModel: vm),
-                  ),
+  testWidgets('built-in choices create drafts; back protects unsaved changes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => RecordView(viewModel: vm),
                 ),
-                child: const Text('Öffnen'),
               ),
+              child: const Text('Öffnen'),
             ),
           ),
         ),
-      );
-      await tester.tap(find.text('Öffnen'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Eigene Kategorie erstellen'));
-      await tester.tap(find.text('Eigene Kategorie erstellen'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, 'Schlaf');
-      await tester.tap(find.text('Hinzufügen'));
-      await tester.pumpAndSettle();
-      expect(vm.entryDays, isEmpty);
-      final customId = vm.customCategories.keys.single;
-      expect(find.byKey(ValueKey('category-$customId')), findsOneWidget);
-      await tester.ensureVisible(find.text('Eigenen Eintrag hinzufügen').last);
-      await tester.tap(find.text('Eigenen Eintrag hinzufügen').last);
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '8 Stunden');
-      await tester.tap(find.text('Hinzufügen'));
-      await tester.pumpAndSettle();
-      expect(vm.entryDays, {today});
-      await tester.tap(find.byTooltip('Zurück'));
-      await tester.pumpAndSettle();
-      expect(find.text('Änderungen speichern?'), findsOneWidget);
-      await tester.tap(find.text('Weiter erfassen'));
-      await tester.pumpAndSettle();
-      expect(find.byType(RecordView), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
+      ),
+    );
+    await tester.tap(find.text('Öffnen'));
+    await tester.pumpAndSettle();
+    expect(vm.entryDays, isEmpty);
+    await tester.ensureVisible(find.text('Ruhig'));
+    await tester.tap(find.text('Ruhig'));
+    await tester.pump();
+    expect(vm.entryDays, {today});
+    await tester.tap(find.byTooltip('Zurück'));
+    await tester.pumpAndSettle();
+    expect(find.text('Änderungen speichern?'), findsOneWidget);
+    await tester.tap(find.text('Weiter erfassen'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RecordView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'day strip swipes in both directions and preserves dated entries',
