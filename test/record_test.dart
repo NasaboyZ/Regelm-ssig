@@ -40,6 +40,15 @@ class FakeReminders implements AppointmentReminders {
 TrackingGroup group(String id) =>
     trackingCategories.expand((c) => c.groups).singleWhere((g) => g.id == id);
 
+Future<void> openMood(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('category-bleeding')));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(const ValueKey('category-mood')));
+  await tester.tap(find.byKey(const ValueKey('category-mood')));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(const ValueKey('mood-calm')));
+}
+
 void main() {
   late MemoryStorage storage;
   late TrackingRepository repository;
@@ -242,6 +251,48 @@ void main() {
     },
   );
 
+  testWidgets('today button starts without a mood selection', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainView(trackingRepository: repository, reminders: reminders),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Heute erfassen'));
+    await tester.pumpAndSettle();
+    final record = tester.widget<RecordView>(find.byType(RecordView));
+    expect(record.viewModel.entry.selections['mood'] ?? <String>{}, isEmpty);
+    expect(record.viewModel.isDirty, isFalse);
+    await openMood(tester);
+    for (final option in group('mood').options) {
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(ValueKey('mood-${option.code}')))
+            .selected,
+        isFalse,
+      );
+    }
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('today button starts with bleeding expanded and mood closed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainView(trackingRepository: repository, reminders: reminders),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Heute erfassen'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('flow-light')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mood-calm')), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets(
     'today button opens editor, draft dots update, save refreshes home',
     (tester) async {
@@ -262,6 +313,7 @@ void main() {
         ValueKey('tracking-dot-${dayKey(DateTime.now())}'),
       );
       expect(dot, findsNothing);
+      await openMood(tester);
       await tester.tap(find.text('Ruhig'));
       await tester.pump();
       expect(dot, findsOneWidget);
@@ -279,6 +331,7 @@ void main() {
       );
       await tester.tap(find.text('Heute erfassen'));
       await tester.pumpAndSettle();
+      await openMood(tester);
       expect(
         tester
             .widget<FilterChip>(find.byKey(const ValueKey('mood-energetic')))
@@ -314,6 +367,7 @@ void main() {
     await tester.tap(find.text('Öffnen'));
     await tester.pumpAndSettle();
     expect(vm.entryDays, isEmpty);
+    await openMood(tester);
     await tester.ensureVisible(find.text('Ruhig'));
     await tester.tap(find.text('Ruhig'));
     await tester.pump();
@@ -336,6 +390,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(MaterialApp(home: RecordView(viewModel: vm)));
       await tester.pumpAndSettle();
+      await openMood(tester);
       await tester.tap(find.text('Ruhig'));
       await tester.pump();
 

@@ -27,7 +27,7 @@ class RecordView extends StatefulWidget {
 
 class _RecordViewState extends State<RecordView> {
   RecordViewModel get vm => widget.viewModel;
-  final Set<String> _expanded = {'mood'};
+  final Set<String> _expanded = {'bleeding'};
   int _formRevision = 0;
   bool _leaving = false;
   @override

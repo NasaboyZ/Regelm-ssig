@@ -20,6 +20,7 @@ kopiert und anhand der tatsächlichen Beobachtung ausgefüllt.
 - [002: Device Hub ersetzt die Simulator-App in Xcode 27](002_xcode_27_device_hub.md)
 - [003: SQLCipher-Speicherung und aktuelle Daten in TablePlus](003_sqlcipher_speicherung_und_tableplus.md)
 - [004: Verschlüsselungsprüfung an echter Flutter-Datenbank und sqlmap-Labor](004_verschluesselungspruefung.md)
+- [005: iPhone-Erkenntnisse zu Bedienbarkeit und Design](005_iphone_bedienbarkeit_und_design.md)
 
 ## Vorlage
 
