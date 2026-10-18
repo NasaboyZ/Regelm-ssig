@@ -21,6 +21,20 @@ Hier stehen die Anleitungen zum Starten, Prüfen und Anschauen der App-Daten.
 
 ## Anleitungen
 
+- [Architektur von Regelmässig](architektur.adoc): MVVM-Übersicht für
+  Webentwickler mit konkreten Klassen, UI-State, Repository und Storage sowie
+  einer separaten Grafik zur Verschlüsselung. Details stehen direkt darunter.
+  Direkt öffnen: [MVVM-Architektur](diagramme/app-architektur.svg) und
+  [Verschlüsselung](diagramme/verschluesselung.svg).
+- [Datenmodell und Speicherung](datenmodell.adoc): fachliche Objekte und
+  Beziehungen, getrennt vom verschlüsselten Datenbankschema.
+  Grafiken: [Datenmodell](diagramme/datenmodell.svg) und
+  [Schema-Version 3](diagramme/datenbankschema.svg).
+- [Speicherablauf: Erfolg und Fehler](speicherablauf.adoc): Sequenzdiagramme
+  für Commit, Zustandsänderungen und erhaltene Entwürfe bei Schreibfehlern.
+  Grafiken: [Erfolgsfall](diagramme/speichern-erfolg.svg) und
+  [Fehlerfall](diagramme/speichern-fehler.svg).
+  Beide Dokumente ordnen Prüffragen vorhandenen Tests und historischen Belegen zu.
 - [Ein Jahr Zyklus-Dummy-Daten](zyklus_demo.md): Demo im Simulator starten,
   erwartete Rechenergebnisse und MVVM-Tests.
 - [Verschlüsselungsprüfung vom 02.10.2026](../erkenntnisse/004_verschluesselungspruefung.md):
