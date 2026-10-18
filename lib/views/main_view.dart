@@ -14,6 +14,7 @@ import '../viewmodels/cycle_history_view_model.dart';
 import 'cycle/cycle_history_view.dart';
 import '../widgets/cycle/cycle_summary_card.dart';
 import 'home/home_view.dart';
+import 'transfer/transfer_view.dart';
 
 class MainView extends StatefulWidget {
   const MainView({super.key, this.trackingRepository, this.reminders});
@@ -141,22 +142,7 @@ class _MainViewState extends State<MainView> with WidgetsBindingObserver {
             viewModel: _cycleHistoryViewModel,
             onRecordDay: _record,
           ),
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Einstellungen',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 12),
-                  Text('Hier werden deine Einstellungen verfügbar sein.'),
-                ],
-              ),
-            ),
-          ),
+          const TransferView(),
         ],
       ),
     ),
