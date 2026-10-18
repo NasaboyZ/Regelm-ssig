@@ -1,0 +1,311 @@
+= Architektur von Regelmässig
+:lang: de
+:toc:
+:toc-title: Auf dieser Seite
+:toclevels: 1
+:imagesdir: diagramme
+
+Die Flutter-App trennt mit *MVVM* die UI-Komponenten (*View*), den
+UI-State und die Aktionen (*ViewModel*) sowie Daten und Fachlogik (*Model*).
+Die Übersicht richtet sich an Webentwickler: Sie zeigt die zentralen Klassen,
+ihre Zuständigkeiten und den Informationsfluss innerhalb der App.
+
+Stand: 17.10.2026. Dargestellt ist die lokale Erfassung im aktuellen Code.
+Der geplante QR-Transfer gehört noch nicht dazu.
+
+Vertiefungen:
+xref:datenmodell.adoc[Datenmodell und Datenbankschema] sowie
+xref:speicherablauf.adoc[Speicherablauf mit Erfolgs- und Fehlerfall].
+Beide Seiten verknüpfen die Darstellung mit empirischen Prüffragen und
+kennzeichnen, welche Ergebnisse bereits belegt sind.
+
+== Die Architektur auf einen Blick
+
+*Oben liegen UI-State und Aktionen, links Daten und Services, rechts die UI.*
+Die Pfeile unterscheiden Methodenaufrufe von Änderungsbenachrichtigungen.
+
+ifdef::render-diagrams[]
+[plantuml,app-architektur,svg]
+----
+@startuml
+!pragma layout smetana
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 20
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowFontSize 17
+skinparam ArrowThickness 1.5
+skinparam rectangleBorderColor #83909A
+skinparam roundcorner 24
+skinparam padding 18
+skinparam nodesep 100
+skinparam ranksep 80
+rectangle "<size:28><b>ViewModel</b></size>\n<size:21>UI-State und Aktionen</size>\n\nHomeViewModel\nCycleHistoryViewModel\nRecordViewModel\n\n<size:18>ChangeNotifier · Lade-/Fehlerzustand</size>" as vm #F4D1D2
+rectangle "<size:28><b>Model</b></size>\n<size:21>Daten und Fachlogik</size>\n\nDayEntry · PeriodEntry\nTrackingRepository\n\n<size:18>Storage · Fachservices</size>" as model #D1DFF6
+rectangle "<size:28><b>View</b></size>\n<size:21>Flutter-Widgets / UI</size>\n\nHomeView\nCycleHistoryView\nRecordView" as view #DCEBCF
+vm -down-> model : load() / save()\nService-Aufrufe
+model -up-> vm : Snapshot geändert\nnotifyListeners()
+vm -down-> view : UI-State\nnotifyListeners()
+view -up-> vm : UI-Events /\nMethodenaufrufe
+model -[hidden]right-> view
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::app-architektur.svg[MVVM: ViewModel oben, Model links und View rechts]
+endif::[]
+
+=== View: UI-Komponenten
+
+`HomeView`, `CycleHistoryView` und `RecordView` sind Flutter-Widgets,
+vergleichbar mit UI-Komponenten im Web. Sie rendern den ViewModel-State und
+leiten UI-Events an dessen Methoden weiter. Änderungen werden über
+`ChangeNotifier` beobachtet und lösen einen erneuten Aufbau der betroffenen UI aus.
+SQL und Verschlüsselung gehören nicht in diese Views.
+
+=== ViewModel: State und Anwendungsaktionen
+
+Die ViewModels halten UI-State, verarbeiten Eingaben und koordinieren Repository
+und Services. `RecordViewModel` verwaltet beispielsweise den bearbeiteten Tag,
+ungespeicherte Änderungen und die Zustände `RecordLoading`, `RecordReady`,
+`RecordSaving` und `RecordError`.
+
+`HomeViewModel` und `CycleHistoryViewModel` verwenden die gemeinsame Basis
+`CycleViewModel`. Diese beobachtet das Repository und berechnet bei Änderungen
+die Zykluszusammenfassung neu. `RecordViewModel` lädt dagegen einen lokalen
+Bearbeitungsstand; nicht jedes ViewModel abonniert das Repository.
+
+=== Model: Domain-Daten, Repository und Services
+
+`DayEntry` und `PeriodEntry` repräsentieren fachliche Daten.
+`TrackingSnapshot` bündelt den Datenbestand. `TrackingRepository` hält diesen
+Snapshot im Speicher und kapselt asynchrones Laden und Speichern.
+
+Der Persistenzpfad lautet:
+`TrackingRepository → TrackingStorage → SqlCipherTrackingStorage`.
+`TrackingStorage` ist die austauschbare Schnittstelle mit `read()` und
+`write(snapshot)`; der SQLCipher-Adapter übernimmt Serialisierung,
+Verschlüsselung und Datenbanktransaktionen. Die Views und ViewModels benötigen
+daher weder SQL noch direkten Dateizugriff.
+
+*«Model» ist hier eine architektonische Gruppierung*, nicht eine einzelne Klasse
+oder ausschliesslich der Ordner `lib/models`. Die technische Persistenz liegt
+im Code in einem separaten Storage-Service. Ein HTTP-Backend ist an diesem
+lokalen Tracking-Datenfluss nicht beteiligt.
+
+=== Dependency Injection und Lebensdauer
+
+`configureDependencies()` registriert Repository, Storage, Zyklusberechnung
+und Erinnerungsdienst in `get_it`. `MainView` bezieht die Abhängigkeiten
+und übergibt sie über Konstruktoren an die ViewModels. Die ViewModels werden
+beim Entfernen ihrer zugehörigen Ansicht mit `dispose()` freigegeben.
+
+=== Beispiel: Eine Notiz speichern
+
+. `RecordView` leitet die Aktion an `RecordViewModel` weiter.
+. Das ViewModel erstellt den neuen Snapshot und ruft `TrackingRepository.save()` auf.
+. Das Repository wartet auf `TrackingStorage.write(snapshot)`.
+  Der Adapter verschlüsselt die Inhalte und schreibt sie in einer Transaktion.
+. Erst nach erfolgreichem Schreiben ersetzt das Repository seinen Snapshot
+  und ruft `notifyListeners()` auf. Die beobachtenden ViewModels aktualisieren
+  ihren UI-State; das Erfassungs-ViewModel meldet den Abschluss der Speicheraktion.
+
+Die View beobachtet den Anzeigezustand des ViewModels. Die Pfeile sind eine
+vereinfachte Darstellung des Informationsflusses, kein Ablaufdiagramm mit
+einer festen Start- und Endposition.
+
+== Wo liegt die Verschlüsselung?
+
+Sie gehört zur *Speicherung im Model-Bereich*. Die beiden ineinanderliegenden
+Kästen zeigen zwei getrennte Schutzebenen: Die Datenbankdatei ist verschlüsselt,
+und die Inhalte darin sind zusätzlich verschlüsselt.
+
+ifdef::render-diagrams[]
+[plantuml,verschluesselung,svg]
+----
+@startuml
+!pragma layout smetana
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 20
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowFontSize 17
+skinparam ArrowThickness 1.5
+skinparam rectangleBorderColor #83909A
+skinparam roundcorner 24
+skinparam padding 18
+skinparam nodesep 100
+skinparam ranksep 80
+skinparam nodesep 30
+skinparam ranksep 30
+rectangle "<size:25><b>Datenbankdatei / SQLCipher</b></size>\n\nAES-256-CBC auf Datenbankseiten\nAdapter: SqlCipherTrackingStorage\nSchlüssel: keyProvider\n " as db #D1DFF6 {
+  rectangle "<size:24><b>Datensätze / Payload-BLOBs</b></size>\n\nAES-256-GCM pro Datensatz\nDienst: TrackingPayloadCipher\nSchlüssel: dataKeyProvider\n\nJSON → UTF-8 → verschlüsselte Payload" as data #DCEBCF
+}
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::verschluesselung.svg[Zwei ineinander liegende Schutzebenen: Datenbankdatei und einzelne Inhalte]
+endif::[]
+
+*Zum Lesen braucht die App beide Schlüssel:* Zuerst öffnet sie die Datenbank,
+danach entschlüsselt sie die einzelnen Inhalte. Für die Verarbeitung und
+Anzeige liegen Daten im Arbeitsspeicher lesbar vor.
+
+Nach dem Öffnen der SQLCipher-Ebene enthalten die Tabellen technische `id`-Werte
+und `payload`-BLOBs. Die Payload besteht aus Version, 12-Byte-Nonce, Chiffrat
+und 16-Byte-GCM-Tag. AES-GCM authentifiziert zusätzlich den Kontext, die Version,
+den Tabellennamen und die Zeilen-ID. Eine manipulierte Payload wird beim Lesen
+abgewiesen, bevor ihr JSON ausgewertet wird.
+
+[IMPORTANT]
+====
+*Aktueller Entwicklungsstand:* Die Verschlüsselung ist echt, beide Schlüssel
+sind aber öffentliche Testwerte im Programmcode. Wer die Schlüssel kennt und
+die Datenbankdatei besitzt, kann sie entschlüsseln.
+
+Eine Schlüsselverwaltung für den echten Einsatz fehlt noch. Deshalb ist dieser
+Stand nur für erfundene Testdaten geeignet.
+====
+
+== Wo gehören weitere Funktionen hin?
+
+* *Zyklusberechnung:* Fachliche Logik im Model-Bereich. Das ViewModel lässt aus
+  den geladenen Perioden eine Zusammenfassung berechnen und bereitet sie für die
+  Startseite oder Zyklusübersicht auf. Die Anzeige einer Prognose hängt unter
+  anderem von der Einwilligung und den vorhandenen Daten ab.
+* *Terminerinnerungen:* Ein zusätzlicher technischer Dienst. Nach dem Speichern
+  beauftragt das ViewModel den Erinnerungsdienst. Dieser übergibt geplante
+  Mitteilungen an das Betriebssystem. Dafür müssen Mitteilungen erlaubt sein.
+  Scheitert das Planen, bleibt der Termin gespeichert und die App zeigt einen
+  Hinweis. Dieser separate Weg ist in der MVVM-Übersicht ausgeblendet.
+
+Die Verschlüsselung der Datenbank ist keine Aussage darüber, wie das
+Betriebssystem seine Mitteilungen speichert.
+
+== Technische Zuordnung zum Nachschlagen
+
+Dieser Abschnitt ist für die Arbeit am Code gedacht. Für das Verständnis
+der Übersicht ist er nicht nötig.
+
+[%collapsible]
+.Technische Namen und Details anzeigen
+====
+[cols="1,2",options="header"]
+|===
+|Begriff in den Grafiken |Umsetzung im Code
+|View: Oberfläche
+|Views: `HomeView`, `CycleHistoryView`, `RecordView`.
+|ViewModel: Vermittlung
+|ViewModels: `HomeViewModel`, `CycleHistoryViewModel`, `RecordViewModel`.
+Sie verwalten den Zustand und melden Änderungen über `ChangeNotifier`.
+|Model-Bereich: Datenverwaltung
+|`TrackingRepository` hält einen `TrackingSnapshot` im Arbeitsspeicher.
+Es veröffentlicht den neuen Stand erst nach erfolgreichem Speichern.
+|Model-Bereich: Speicherung
+|Die Schnittstelle `TrackingStorage` wird im normalen Entwicklungsstart
+durch `SqlCipherTrackingStorage` umgesetzt.
+|Inhalte verschlüsseln
+|`TrackingPayloadCipher`: AES-256-GCM mit einem 32-Byte-Schlüssel.
+Jede Payload erhält eine neue zufällige Nonce; Kontext, Version, Tabelle und
+Zeilen-ID werden als zusätzliche authentifizierte Daten eingebunden.
+|Datenbank verschlüsseln
+|SQLCipher: AES-256-CBC. Die Datei heisst
+`regelmaessig_tracking_debug.db`.
+|Zyklus auswerten
+|`CycleCalculationService`, verwendet von den ViewModels
+für Startseite und Zyklusverlauf.
+|Erinnerung planen
+|`AppointmentReminders` mit `LocalAppointmentReminders`;
+Übergabe an das Betriebssystem über das Plugin für lokale Mitteilungen.
+|===
+
+*Zusammenstellung:* `configureDependencies()` registriert die Dienste mit
+`get_it`. `MainView` bezieht sie und übergibt sie an die
+ViewModel-Konstruktoren.
+
+*Speichermodell:* Schema-Version 3 enthält Tagesdaten, eigene Kategorien,
+Perioden, die Prognose-Einwilligung sowie einen verschlüsselten Prüfwert.
+Die Tabellen speichern technische IDs und verschlüsselte Payloads.
+Falsche Schlüssel oder beschädigte Payloads führen zu Fehlern; es gibt keinen
+Rückfall auf unverschlüsselte Speicherung.
+
+*Schlüssel:* `DebugTrackingKeys` liefert zwei öffentliche Testschlüssel.
+Im Profile-/Release-Modus lehnt dieser Anbieter den Zugriff ab.
+
+*Andere Startvarianten:* `DemoTrackingStorage` hält die separate Zyklus-Demo
+nur im Arbeitsspeicher. `SecureTrackingStorage` ist noch im Code vorhanden,
+wird beim normalen Start aber nicht als Speicher verwendet.
+Startbildschirm und Onboarding sind in den Grafiken ausgelassen.
+
+*Prüfstand:* Die
+link:../erkenntnisse/004_verschluesselungspruefung.md[Dateiprüfung vom 02.10.2026]
+belegt beide Verschlüsselungsebenen für die damalige iOS-Testdatenbank mit
+Schema-Version 2. Diese Grafiken erklären den heutigen Code mit Version 3;
+sie sind kein neuer Laufzeitnachweis. Begleitdateien, Backups und
+Betriebssystemdateien sind damit nicht pauschal geprüft. AES-GCM allein
+erkennt weder das Löschen ganzer Zeilen noch das Zurückspielen eines früheren
+gültigen Datenbestands.
+
+Quellen:
+link:../../lib/dependencies.dart[Zusammenstellung],
+link:../../lib/views/main_view.dart[MainView],
+link:../../lib/repositories/tracking_repository.dart[Datenverwaltung],
+link:../../lib/services/sqlcipher_tracking_storage.dart[Speicherung],
+link:../../lib/services/tracking_payload_cipher.dart[Inhaltsverschlüsselung],
+link:../../lib/services/debug_tracking_keys.dart[Testschlüssel],
+link:../../lib/services/cycle_calculation_service.dart[Zyklusberechnung] und
+link:../../lib/services/appointment_reminders.dart[Erinnerungen].
+====
+
+== Grafiken öffnen und bearbeiten
+
+*Zum Anschauen:* Öffne `architektur.html` im Browser, wenn du die lokale
+HTML-Vorschau erzeugt hast. Die SVG-Dateien im Ordner `diagramme/` lassen
+sich direkt öffnen. Eine AsciiDoc-Vorschau zeigt die vorhandenen SVGs auch
+ohne PlantUML-Erweiterung an.
+
+*Zum Bearbeiten:* Diese `.adoc`-Datei enthält die Texte und die
+PlantUML-Quellen. Nach einer Diagrammänderung werden die SVGs neu erzeugt.
+
+[%collapsible]
+.Anleitung zum erneuten Erzeugen anzeigen
+====
+Benötigt werden Ruby, Java und die folgenden Gems.
+Smetana übernimmt das Layout; ein separates Graphviz oder ein öffentlicher
+Diagrammserver wird nicht benötigt.
+
+[source,shell]
+----
+gem install asciidoctor asciidoctor-diagram asciidoctor-diagram-plantuml
+----
+
+Im Projektwurzelverzeichnis ausführen:
+
+[source,shell]
+----
+mkdir -p build/docs/cache
+asciidoctor --failure-level WARN \
+  -r asciidoctor-diagram \
+  -a render-diagrams \
+  -a diagram-cachedir="$PWD/build/docs/cache" \
+  docs/entwicklung/architektur.adoc
+----
+
+Das aktualisiert die beiden SVGs unter `docs/entwicklung/diagramme/`
+und erzeugt `docs/entwicklung/architektur.html`.
+HTML und Cache sind lokale Vorschauartefakte.
+Die `.adoc`- und SVG-Dateien gehören gemeinsam ins Repository.
+
+Lokal verwendet: Asciidoctor 2.0.26, Asciidoctor Diagram 3.2.1,
+PlantUML 1.2026.2 und Java 21.
+
+Weitere Informationen:
+https://docs.asciidoctor.org/diagram-extension/latest/diagram_types/plantuml/[PlantUML mit Asciidoctor Diagram].
+====

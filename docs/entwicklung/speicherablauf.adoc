@@ -1,0 +1,261 @@
+= Speicherablauf: Erfolg und Fehler
+:lang: de
+:toc:
+:toc-title: Auf dieser Seite
+:toclevels: 1
+:imagesdir: diagramme
+
+Diese Seite ergänzt die xref:architektur.adoc[MVVM-Übersicht] um eine konkrete
+Aktion: *Was geschieht beim Speichern einer Erfassung?*
+Die Datenstrukturen erklärt das xref:datenmodell.adoc[Datenmodell].
+Stand des untersuchten Codes: 17.10.2026.
+
+Ein Sequenzdiagramm wird von oben nach unten gelesen. Die Spalten sind die
+beteiligten Komponenten; durchgezogene Pfeile zeigen Aufrufe, gestrichelte
+Pfeile deren Rückgabe beziehungsweise einen weitergereichten Fehler.
+Die Diagramme beschreiben erwartetes Verhalten aus dem Code, keine gemessenen
+Laufzeiten.
+
+== Erfolgreiches Speichern
+
+*Voraussetzung:* Die Erfassung ist geladen, der Zustand ist `RecordReady`,
+und die Eingaben sind gültig. Das Repository hat seinen bisherigen Snapshot
+bereits geladen. Sein vorgeschaltetes `load()` in `save()` kehrt deshalb
+ohne erneuten Lesezugriff zurück.
+
+ifdef::render-diagrams[]
+[plantuml,speichern-erfolg,svg]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 18
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowThickness 1.5
+skinparam roundcorner 18
+hide footbox
+skinparam sequenceParticipantBorderColor #83909A
+skinparam sequenceLifeLineBorderColor #8191A2
+skinparam sequenceMessageAlign center
+skinparam sequenceGroupBackgroundColor #F7F9FC
+skinparam sequenceGroupBorderColor #8191A2
+skinparam ParticipantPadding 18
+skinparam BoxPadding 12
+participant "View\nRecordView" as view #DCEBCF
+participant "ViewModel\nRecordViewModel" as vm #F4D1D2
+participant "Repository\nTrackingRepository" as repo #D1DFF6
+participant "Storage\nSQLCipher-Adapter" as storage #FFF2D9
+view -> vm : save()
+vm -> vm : Perioden / Messwerte\nvalidieren
+vm -> vm : RecordSaving setzen\nnotifyListeners()
+vm -> vm : Snapshot erstellen
+vm -> repo : save(snapshot)
+repo -> storage : write(snapshot)
+storage -> storage : Verbindung beziehen\nPayloads verschlüsseln
+group Datenbanktransaktion
+  storage -> storage : Bestand lesen\nund authentifizieren
+  storage -> storage : Tabellen ersetzen\nCommit
+end
+storage --> repo : erfolgreich
+repo -> repo : Snapshot ersetzen\nnotifyListeners()
+repo --> vm : erfolgreich
+vm -> vm : Erinnerungsdienst\nsynchronisieren
+vm -> vm : dirty = false; RecordReady\nnotifyListeners()
+vm --> view : true
+view -> view : Snackbar anzeigen\nRoute schliessen
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::speichern-erfolg.svg[Sequenz vom UI-Event über Snapshot und Transaktion bis zur Erfolgsmeldung]
+endif::[]
+
+`Storage` bezeichnet hier `SqlCipherTrackingStorage`, angesprochen über
+die Schnittstelle `TrackingStorage`. Die internen Aufrufe zur
+Payload-Verschlüsselung und zum nativen Datenbank-Plugin sind in dieser
+Spalte zusammengefasst, damit das Diagramm lesbar bleibt.
+
+=== Transaktionsgrenze und Benachrichtigungen
+
+* Der Adapter verschlüsselt die neuen Datensätze *vor* der Transaktion.
+  Die Prüfung des vorhandenen Bestands und der Austausch der fachlichen
+  Datensätze erfolgen *innerhalb* der Transaktion.
+* Erst wenn `write()` erfolgreich zurückkehrt, ersetzt das Repository seinen
+  Snapshot und ruft `notifyListeners()` auf. Beobachtende Zyklus-ViewModels
+  können danach ihre Zusammenfassung aktualisieren.
+* `RecordViewModel` verwaltet seinen eigenen Bearbeitungsstand und
+  benachrichtigt die View über seine eigenen Zustandsänderungen.
+  Das Repository ruft nicht direkt UI-Widgets auf.
+* Das Speichern betrifft den zusammengestellten Snapshot, nicht nur einen
+  SQL-Update für die gerade sichtbare Notiz. Bereits bearbeitete Tage,
+  Kategorien und Perioden werden gemeinsam übergeben.
+
+=== Nachgelagerte Erinnerungen
+
+Nach erfolgreichem Speichern ruft das ViewModel
+`AppointmentReminders.synchronize(snapshot)` auf und wartet auf das Ergebnis.
+Der konkrete Dienst `LocalAppointmentReminders` plant lokale Mitteilungen
+über das Betriebssystem. Das ist keine Operation innerhalb der
+Datenbanktransaktion.
+
+Der Dienst liefert bei einer nicht möglichen Planung eine Warnung zurück.
+Der Datensatz bleibt gespeichert, `save()` liefert weiterhin `true`,
+und die Snackbar zeigt die Warnung anstelle der normalen Erfolgsmeldung.
+Die Route wird erst im folgenden Frame geschlossen, sofern die View noch
+eingehängt ist.
+
+== Fehler während des Schreibens
+
+Dieses Diagramm zeigt beispielhaft einen SQL-Fehler *innerhalb* der
+Transaktion, etwa beim Ersetzen von Datensätzen. Der Repository-Snapshot
+bleibt unverändert; der ungespeicherte Entwurf bleibt im ViewModel erhalten.
+
+ifdef::render-diagrams[]
+[plantuml,speichern-fehler,svg]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 18
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowThickness 1.5
+skinparam roundcorner 18
+hide footbox
+skinparam sequenceParticipantBorderColor #83909A
+skinparam sequenceLifeLineBorderColor #8191A2
+skinparam sequenceMessageAlign center
+skinparam sequenceGroupBackgroundColor #F7F9FC
+skinparam sequenceGroupBorderColor #8191A2
+skinparam ParticipantPadding 18
+skinparam BoxPadding 12
+participant "View\nRecordView" as view #DCEBCF
+participant "ViewModel\nRecordViewModel" as vm #F4D1D2
+participant "Repository\nTrackingRepository" as repo #D1DFF6
+participant "Storage\nSQLCipher-Adapter" as storage #FFF2D9
+view -> vm : save()
+vm -> vm : Validieren; RecordSaving\nSnapshot erstellen
+vm -> repo : save(snapshot)
+repo -> storage : write(snapshot)
+storage -> storage : Payloads verschlüsseln
+group Transaktion: SQL-Fehler
+  storage -> storage : Bestand prüfen\nDatensätze ersetzen
+  storage -> storage : SQL-Schreibfehler\nRollback
+end
+storage --> repo : Exception
+note over repo #D1DFF6
+  Snapshot unverändert;
+  kein notifyListeners()
+  für neue Daten.
+end note
+repo --> vm : Exception
+vm -> vm : RecordReady + saveError\nEntwurf / dirty erhalten\nnotifyListeners()
+vm --> view : false
+view -> view : Fehler anzeigen\nRoute bleibt geöffnet
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::speichern-fehler.svg[SQL-Fehler führt zu Rollback, unverändertem Repository und erhaltenem Entwurf]
+endif::[]
+
+Ein Fehler *vor* dem Beginn der Transaktion, etwa bei der Verschlüsselung,
+benötigt keinen Rollback: Es wurde noch nichts ersetzt.
+Fehler beim Prüfen des bestehenden Bestands verhindern ebenfalls das Schreiben.
+
+Das ViewModel verwendet bei einem Speicherfehler `RecordReady` mit
+`saveError`, nicht `RecordError`. Dadurch bleibt der Entwurf bearbeitbar.
+Nach Beheben der Ursache kann erneut gespeichert werden; der Fehler löst
+keine automatische Löschung oder Klartextspeicherung aus.
+
+=== Validierungsfehler vor dem Schreiben
+
+Ungültige Perioden oder Messwerte setzen bereits vor `RecordSaving` eine
+Fehlermeldung und führen zu `false`. Es gibt dann keinen Aufruf von
+`repository.save()`. Bei einem fehlerhaften Messwert wird der betroffene Tag
+ausgewählt. Wenn die Erfassung noch nicht bearbeitbar ist, wird der
+Speicherversuch ebenfalls abgewiesen.
+
+=== Quellen im Code
+
+link:../../lib/views/record/record_view.dart[RecordView._save()],
+link:../../lib/viewmodels/record_view_model.dart[RecordViewModel.save()],
+link:../../lib/repositories/tracking_repository.dart[TrackingRepository.save()],
+link:../../lib/services/sqlcipher_tracking_storage.dart[SQLCipher-Storage] und
+link:../../lib/services/appointment_reminders.dart[Erinnerungsdienst].
+
+== Bezug zur empirischen Untersuchung
+
+Die Diagramme machen Commit-Grenze, Zustandsänderungen und Fehlerrückgaben
+prüfbar. Die folgende Tabelle trennt erwartetes Verhalten von vorhandenen
+Belegen. Für diese Dokumentation wurden keine neuen App- oder Dateiversuche
+ausgeführt.
+
+[cols="1,2,2,2",options="header"]
+|===
+|Untersuchungsfrage |Prüfverfahren |Erwartete Beobachtung |Beleg oder offene Prüfung
+|Wird ein erfolgreicher Schreibvorgang dauerhaft gespeichert?
+|Künstlichen Snapshot speichern, Verbindung schliessen und mit einem neuen
+Repository erneut laden.
+|Die gespeicherten Inhalte entsprechen der Fixture, nicht nur dem
+vorherigen Arbeitsspeicherzustand.
+|link:../../integration_test/sqlcipher_tracking_storage_test.dart[Integrationstest]
+`all fields survive a closed connection and a new repository` vorhanden.
+Der link:../erkenntnisse/004_verschluesselungspruefung.md[Prüfbericht vom 02.10.2026]
+dokumentiert den damaligen Lauf mit Schema 2; keine pauschale Bestätigung
+aller heutigen Schema-3-Felder.
+|Bleiben Bestand und Entwurf bei einem SQL-Fehler erhalten?
+|Auf einer separaten Testdatenbank einen fehlschlagenden SQL-Trigger setzen,
+Speichern auslösen und anschliessend neu öffnen.
+|Transaktion zurückgerollt, alter Repository-Snapshot unverändert,
+Entwurf weiter vorhanden, Rückgabe `false`.
+|Integrationstest `a SQL failure rolls back days and categories and preserves drafts`
+vorhanden; nativer Lauf im historischen Prüfbericht dokumentiert.
+Ergänzend prüft link:../../test/record_test.dart[Record-Testcode] den Entwurf
+mit einem fehlschlagenden Test-Storage. Hier kein erneuter Lauf.
+|Verhindert Manipulation das Lesen und Überschreiben?
+|Bytekopien von Nonce, Chiffrat oder Tag verändern; zusätzlich einen bereits
+geladenen Datenbestand in einer isolierten Testdatenbank beschädigen.
+|Authentifizierung schlägt fehl. Der Schreibschutz durch erneute Prüfung
+des Bestands verhindert ein Überschreiben beschädigter Daten.
+|link:../../test/tracking_payload_cipher_test.dart[AES-Testcode] und
+Integrationstest `tampering after load blocks writes and preserves stored bytes`.
+Der historische Dateiversuch belegt Manipulationsablehnung für Schema 2;
+die vorhandenen nativen Tests prüfen auch den Schreibpfad.
+|Ist eine Erinnerungswarnung von einem Speicherfehler unterscheidbar?
+|Auf einem separaten Testgerät Mitteilungen verweigern, einen künftigen Termin
+speichern und den Termin nach erneutem Laden prüfen.
+|Termin gespeichert, Rückgabe `true`, Warnung statt normaler Erfolgsmeldung;
+kein Datenbank-Rollback wegen der Warnung.
+|Aus dem aktuellen Code abgeleitet; ein zugeordneter empirischer Beleg
+für dieses Szenario wird hier nicht behauptet. Prüfung offen.
+|===
+
+Ein bestandener Test gilt nur für seine Fixture, Plattform und Version.
+Für neue Messreihen sind Code-Stand, Testdaten, Umgebung, Durchführung,
+Beobachtung und Abweichungen gemeinsam zu dokumentieren.
+Die öffentlichen Debug-Schlüssel sind kein produktiver Schutz persönlicher
+Daten; Testdaten müssen erfunden sein.
+
+== Vorschau und Aktualisierung
+
+Die Diagrammquellen stehen direkt in dieser Datei; ohne Diagrammerweiterung
+werden die eingecheckten SVGs eingebunden. Voraussetzungen und Installation
+stehen in der xref:architektur.adoc[Architekturdokumentation].
+
+Vom Projektwurzelverzeichnis aus:
+
+[source,shell]
+----
+mkdir -p build/docs/cache
+asciidoctor --failure-level WARN -r asciidoctor-diagram \
+  -a render-diagrams -a diagram-cachedir="$PWD/build/docs/cache" \
+  docs/entwicklung/speicherablauf.adoc
+----
+
+Das aktualisiert die beiden zugehörigen SVGs in `diagramme/` und erzeugt
+`speicherablauf.html` für die lokale Browser-Vorschau. HTML und Cache bleiben
+lokale Artefakte; AsciiDoc und SVGs werden gemeinsam versioniert.

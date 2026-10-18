@@ -1,0 +1,258 @@
+= Datenmodell und Speicherung
+:lang: de
+:toc:
+:toc-title: Auf dieser Seite
+:toclevels: 1
+:imagesdir: diagramme
+
+Diese Seite ergänzt die xref:architektur.adoc[MVVM-Übersicht] um die Frage:
+*Welche Daten gehören zusammen, und wie werden sie gespeichert?*
+Zielgruppe sind Webentwickler. Stand des untersuchten Codes: 17.10.2026.
+
+Der xref:speicherablauf.adoc[Speicherablauf] zeigt die beteiligten Komponenten
+und ihre Aufrufreihenfolge. Die folgenden Grafiken zeigen dagegen Strukturen.
+
+== Fachliches Datenmodell
+
+`TrackingSnapshot` ist der gesamte Datenbestand im Arbeitsspeicher.
+Die Linien zeigen die enthaltenen Objekte: `1` bedeutet genau eines,
+`0..*` bedeutet beliebig viele, einschliesslich keines.
+`?` kennzeichnet ein optionales Feld. Methoden sind ausgeblendet.
+
+ifdef::render-diagrams[]
+[plantuml,datenmodell,svg]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 18
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowThickness 1.5
+skinparam roundcorner 18
+!pragma layout smetana
+top to bottom direction
+hide circle
+hide methods
+skinparam classAttributeIconSize 0
+skinparam classBorderColor #83909A
+skinparam classFontSize 21
+skinparam classAttributeFontSize 17
+skinparam nodesep 60
+skinparam ranksep 55
+class TrackingSnapshot #D1DFF6 {
+  categories: Map<String, String>
+  forecastConsent: ForecastConsent
+}
+class DayEntry #DCEBCF {
+  date: DateTime
+  note: String
+  temperature: double?
+  weight: double?
+  selections: Map<String, Set<String>>
+  customValues: Map<String, List<String>>
+}
+class PeriodEntry #F4D1D2 {
+  id: String
+  start: DateTime
+  end: DateTime?
+  type: BleedingType
+  gapBefore: bool
+}
+class DayAppointment #FFF2D9 {
+  id: String
+  title: String
+  startsAt: DateTime
+  location: String
+  alarmMinutes: int?
+}
+TrackingSnapshot "1" *-down- "0..*" DayEntry : days
+TrackingSnapshot "1" *-down- "0..*" PeriodEntry : periods
+DayEntry "1" *-down- "0..*" DayAppointment : appointments
+DayEntry -[hidden]right-> PeriodEntry
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::datenmodell.svg[TrackingSnapshot enthält Tageseinträge und Perioden; Tageseinträge enthalten Termine]
+endif::[]
+
+Die Komposition beschreibt die logische Zugehörigkeit innerhalb eines Snapshots,
+nicht die Identität von Dart-Objekten über mehrere Snapshot-Versionen.
+
+* `days` ist eine `Map<DateTime, DayEntry>`: höchstens ein Eintrag pro lokalem
+  Kalendertag. `periods` ist eine `List<PeriodEntry>`.
+* `categories` ist eine Map von eigener Kategorie-ID zu Name, keine separate
+  Dart-Klasse. `selections` enthält Auswahlcodes, `customValues` eigene Werte.
+* `ForecastConsent` ist ein Enum mit `unknown`, `yes`, `no`, `unsure`.
+  `BleedingType` unterscheidet `period` und `spotting`.
+* Eine Periode gehört zum Snapshot, nicht zu einem einzelnen `DayEntry`.
+  Die Zuordnung zu Kalendertagen wird aus `start` und `end` berechnet;
+  es gibt keine gespeicherte Referenz zwischen beiden Klassen.
+  Ohne Enddatum ist zunächst nur der Starttag bekannt.
+* Termine sind im Tageseintrag enthalten. `startsAt` wird bei der
+  Serialisierung als UTC-Zeitpunkt gespeichert und beim Lesen lokal umgerechnet.
+  Tages- und Periodendaten sind dagegen lokale Kalenderdaten.
+
+Quellen: link:../../lib/models/day_entry.dart[Tageseintrag, Termin und Snapshot],
+link:../../lib/models/period_entry.dart[Perioden und Enums].
+
+== Physische Speicherung: Schema-Version 3
+
+Die Datenbank übernimmt diese Objektstruktur *nicht* als normalisiertes
+relationales Schema. Alle fünf Tabellen haben dieselben zwei Spalten.
+Die Anordnung der Kästen hat keine fachliche Bedeutung; zwischen den Tabellen
+sind keine SQL-Fremdschlüssel definiert.
+
+ifdef::render-diagrams[]
+[plantuml,datenbankschema,svg]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 18
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowThickness 1.5
+skinparam roundcorner 18
+!pragma layout smetana
+top to bottom direction
+hide circle
+hide methods
+skinparam classAttributeIconSize 0
+skinparam classFontSize 20
+skinparam classAttributeFontSize 17
+skinparam nodesep 45
+skinparam ranksep 35
+class day_entries #DCEBCF {
+  id: INTEGER PRIMARY KEY NOT NULL
+  payload: BLOB NOT NULL
+}
+class custom_categories #DCEBCF {
+  id: INTEGER PRIMARY KEY NOT NULL
+  payload: BLOB NOT NULL
+}
+class period_entries #F4D1D2 {
+  id: INTEGER PRIMARY KEY NOT NULL
+  payload: BLOB NOT NULL
+}
+class tracking_settings #D1DFF6 {
+  id: INTEGER PRIMARY KEY NOT NULL
+  payload: BLOB NOT NULL
+}
+class tracking_metadata #FFF2D9 {
+  id: INTEGER PRIMARY KEY NOT NULL
+  payload: BLOB NOT NULL
+}
+day_entries -[hidden]right-> custom_categories
+day_entries -[hidden]down-> period_entries
+custom_categories -[hidden]down-> tracking_settings
+period_entries -[hidden]right-> tracking_settings
+period_entries -[hidden]down-> tracking_metadata
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::datenbankschema.svg[Fünf SQLCipher-Tabellen mit den Spalten id und payload, ohne Fremdschlüssel]
+endif::[]
+
+[cols="1,2",options="header"]
+|===
+|Tabelle |Inhalt der entschlüsselten Payload
+|`day_entries`
+|Ein vollständiger `DayEntry`, einschliesslich seiner Termine,
+Auswahlen, Notiz und Messwerte. Vollständig leere Tage werden nicht gespeichert.
+|`custom_categories`
+|Ein Objekt mit fachlicher Kategorie-ID und Name pro eigener Kategorie;
+Definitionen bleiben auch ohne Tageswerte erhalten.
+|`period_entries`
+|Ein vollständiger `PeriodEntry` pro Periode beziehungsweise Schmierblutung.
+|`tracking_settings`
+|Die Prognose-Einwilligung unter `forecastConsent`; nach einem Schreibvorgang
+eine Zeile mit technischer ID 1.
+|`tracking_metadata`
+|Ein verschlüsselter Prüfwert zur Kontrolle des Datenschlüssels, ID 1.
+Er gehört nicht zum fachlichen Snapshot.
+|===
+
+Die Spalte `id` ist eine technische Zeilennummer. Sie ist weder das Datum
+noch die fachliche Perioden- oder Termin-ID. Die fachlichen IDs liegen in der
+Payload. Beim Speichern werden die vier fachlichen Tabellen innerhalb einer
+Transaktion ersetzt; technische Zeilennummern sind keine stabilen Objekt-IDs.
+
+Termine haben keine eigene Tabelle. Es gibt auch keine lesbaren SQL-Spalten für
+Notiz, Datum oder Temperatur. SQLCipher verschlüsselt die Datenbankseiten;
+`TrackingPayloadCipher` verschlüsselt zusätzlich die Payloads mit AES-256-GCM.
+Details zeigt die xref:architektur.adoc[Verschlüsselungsgrafik].
+
+Eine frisch angelegte Datenbank enthält zunächst den Prüfwert; fachliche
+Tabellen dürfen leer sein. Beim Lesen ohne Einstellungszeile gilt
+`ForecastConsent.unknown`.
+
+*Versionsbegriffe:* Die SQLite-Schema-Version ist 3. Davon unabhängig verwendet
+`TrackingSnapshot.toJson()` die JSON-Formatversion 2 und die AES-Payload
+ihre eigene Formatversion 1. Das sind unterschiedliche Formate.
+
+Quelle: link:../../lib/services/sqlcipher_tracking_storage.dart[SQLCipher-Adapter].
+
+== Bezug zur empirischen Untersuchung
+
+Die Diagramme beschreiben den Untersuchungsgegenstand und leiten Prüffragen ab.
+*Eine erwartete Beobachtung ist noch kein Messergebnis.*
+Für diese Dokumentation wurden keine neuen App- oder Dateiversuche ausgeführt.
+
+[cols="1,2,2,2",options="header"]
+|===
+|Untersuchungsfrage |Prüfverfahren |Erwartete Beobachtung |Beleg oder offene Prüfung
+|Bleiben fachliche Inhalte vollständig erhalten?
+|Eine künstliche Fixture speichern, Verbindung schliessen, über einen neuen
+Adapter laden und alle Felder vergleichen.
+|Daten und Zuordnungen bleiben gleich; UTC-Termine werden korrekt rekonstruiert.
+|Der link:../../integration_test/sqlcipher_tracking_storage_test.dart[Integrationstest]
+`all fields survive a closed connection and a new repository` enthält Tagesdaten,
+Kategorien und Termine. Seine Fixture enthält keine Perioden und keine
+abweichende Prognose-Einwilligung; deren gezielter Schema-3-Nachweis bleibt offen.
+|Was ist ohne, mit einem oder mit beiden Schlüsseln sichtbar?
+|Auf einer geschlossenen Testkopie Tabellen abfragen: ohne Schlüssel,
+nur mit SQLCipher-Schlüssel, anschliessend mit beiden richtigen Schlüsseln.
+|Ohne Datenbankschlüssel keine lesbaren Tabellen; mit diesem Schlüssel
+technische IDs und BLOBs; mit beiden Schlüsseln die fachlichen Inhalte.
+|Im link:../erkenntnisse/004_verschluesselungspruefung.md[Versuch vom 02.10.2026]
+für die damalige iOS-Fixture und Schema-Version 2 dokumentiert.
+Das ist kein neuer Nachweis für Schema 3 oder Android.
+|Sind die Beziehungen auch nach Änderungen konsistent?
+|Tage leeren, Kategorien beibehalten, Perioden über mehrere Tage sowie Termine
+speichern und erneut laden; Resultat mit dem erwarteten Snapshot vergleichen.
+|Leere Tage entfallen, Kategoriedefinitionen bleiben; Perioden sind eigenständige
+Objekte, Termine bleiben in ihrem Tageseintrag.
+|Der genannte Integrationstest enthält Prüfcode für Updates, geleerte Tage
+und Kategorien. Ein kombinierter empirischer Nachweis einschliesslich
+Perioden ist hier noch offen.
+|===
+
+Die Schlüssel des Entwicklungsstarts sind öffentlich. Der Vergleich der
+Zugriffsmöglichkeiten untersucht das Verhalten der Verschlüsselung bei
+vorgegebenem Schlüsselwissen; er belegt keinen Schutz vor Personen,
+die beide Debug-Schlüssel kennen.
+
+== Vorschau und Aktualisierung
+
+Die Diagrammquellen stehen direkt in dieser Datei; ohne Diagrammerweiterung
+werden die eingecheckten SVGs eingebunden. Voraussetzungen und Installation
+stehen in der xref:architektur.adoc[Architekturdokumentation].
+
+Vom Projektwurzelverzeichnis aus:
+
+[source,shell]
+----
+mkdir -p build/docs/cache
+asciidoctor --failure-level WARN -r asciidoctor-diagram \
+  -a render-diagrams -a diagram-cachedir="$PWD/build/docs/cache" \
+  docs/entwicklung/datenmodell.adoc
+----
+
+Das aktualisiert die beiden zugehörigen SVGs in `diagramme/` und erzeugt
+`datenmodell.html` für die lokale Browser-Vorschau. HTML und Cache bleiben
+lokale Artefakte; AsciiDoc und SVGs werden gemeinsam versioniert.
