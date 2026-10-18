@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:regelmaessig/debug/demo_tracking_storage.dart';
+import 'package:regelmaessig/dependencies.dart';
 import 'package:regelmaessig/main.dart';
+import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/viewmodels/startup_view_model.dart';
 import 'package:regelmaessig/theme/app_colors.dart';
 import 'package:regelmaessig/widgets/bottom_navigation_bar.dart';
 
 void main() {
-  setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    configureDependencies(
+      trackingStorage: DemoTrackingStorage(TrackingSnapshot()),
+    );
+  });
+  tearDown(() => GetIt.instance.reset());
 
   testWidgets('Navigation animates between every tab and opens its content', (
     tester,
@@ -29,16 +39,16 @@ void main() {
       ),
       matching: find.byType(Container),
     );
-    const labels = ['Home', 'Zyklusverlauf', 'Einstellungen'];
+    const labels = ['Home', 'Zyklusverlauf', 'Datentransfer'];
     const icons = [
       Icons.home_outlined,
       Icons.calendar_month_outlined,
-      Icons.tune,
+      Icons.sync_alt_rounded,
     ];
     const content = [
       'Noch keine Zyklusdaten',
       'Noch keine Einträge',
-      'Hier werden deine Einstellungen verfügbar sein.',
+      'Auf ein neues Gerät wechseln?',
     ];
     Finder tab(int index) =>
         find.descendant(of: navigation, matching: find.text(labels[index]));

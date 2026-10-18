@@ -61,7 +61,7 @@ class AppBottomNavigationBar extends StatelessWidget {
                     'Zyklusverlauf',
                     Icons.calendar_month_outlined,
                   ),
-                  _item(context, 2, 'Einstellungen', Icons.tune),
+                  _item(context, 2, 'Datentransfer', Icons.sync_alt_rounded),
                 ],
               ),
             ],
