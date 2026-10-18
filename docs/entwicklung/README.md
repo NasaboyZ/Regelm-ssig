@@ -21,6 +21,8 @@ Hier stehen die Anleitungen zum Starten, Prüfen und Anschauen der App-Daten.
 
 ## Anleitungen
 
+- [MLQR-Encoder mit Testansicht](mlqr_encoder.md): Paper-Algorithmus, Ebenen,
+  Referenzbalken und separater Debug-Start mit Testdaten.
 - [Architektur von Regelmässig](architektur.adoc): MVVM-Übersicht für
   Webentwickler mit konkreten Klassen, UI-State, Repository und Storage sowie
   einer separaten Grafik zur Verschlüsselung. Details stehen direkt darunter.
