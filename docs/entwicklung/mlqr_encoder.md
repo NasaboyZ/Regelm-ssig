@@ -1,4 +1,4 @@
-# MLQR-Encoder: digitale Erzeugung
+# MLQR: Erzeugung und Kameraempfang
 
 ## Start der separaten Testansicht
 
@@ -9,7 +9,31 @@ flutter run -t lib/main_mlqr_demo.dart
 Die Demo ist nur im Debug-Modus startbar. Sie verwendet feste UTF-8-Testtexte,
 keine Datenbank, Gesundheitsdaten, Kamera oder Netzwerkverbindung. Standard:
 drei Nutzdatenebenen, Dummy-Ergänzung aktiviert. Die Auswahl reicht von 1 bis 15.
-Die normale App und deren Transferansicht bleiben unverändert.
+In der normalen App öffnet „Datentransfer → Von diesem Gerät senden“ ebenfalls
+eine Vorschau mit einem echten MLQR aus drei festen Testdatenpaketen. Diese
+Sendeseite zeigt noch keine Gesundheitsdaten und verwendet keine Datenbank.
+Sie besitzt einen Zurück-Pfeil und „Transfer abbrechen“, die beide zur
+Transferübersicht zurückführen. Der Fortschritt bleibt bei null: Es werden
+weder Scan-Bestätigungen simuliert noch Codes automatisch weitergeschaltet.
+„Auf diesem Gerät empfangen“ öffnet den Kamera-Scanner für diesen einzelnen
+Testcode. Verschlüsselte Transfersessions und Gesundheitsdatenimport sind noch
+nicht angebunden.
+
+Im Debug-Modus gibt es in der Transferübersicht zusätzlich den aufklappbaren
+Bereich „Ergebnisansichten testen“. „Erfolg ansehen“ und „Fehler ansehen“ öffnen
+die gekennzeichneten Ergebnisvorschauen. Übertragungsdetails zeigen Beispielwerte;
+„Zur Übersicht“ kehrt zurück. „Erneut versuchen“ öffnet einen neuen Kamerascan. Der Sendebildschirm wechselt
+nicht automatisch auf einen erfundenen Erfolg.
+
+Die Ergebnisansicht erhält einen `TransferResultViewModel` mit
+`TransferCodeRead`, `TransferSucceeded` oder `TransferFailed`. Der spätere Empfänger darf Erfolg
+erst nach Datenprüfung und erfolgreichem Datenbank-Commit melden; aufgeführt
+werden nur die übergebenen `importedCategories`. Fehler setzen voraus, dass
+keine Änderungen übernommen wurden beziehungsweise ein Rollback abgeschlossen
+ist. Unvollständige, unlesbare, nicht verifizierbare und nicht speicherbare
+Übertragungen haben eigene Meldungen. Die Ansicht liefert `overview` oder
+`retry` als Navigationsergebnis an ihren Aufrufer zurück. Diese UI-Schnittstelle
+implementiert selbst weder Datenprüfung noch Import.
 
 ## Quelle und Abgrenzung
 
@@ -78,11 +102,12 @@ liegt in Spalte 0 der ein Modul breite Referenzbalken, beginnend auf Höhe der
 ersten Kernzeile. Seine Farben wechseln Grün, Blau, Rot; die Kästchenzahl
 entspricht allen optischen Ebenen inklusive Dummys. Das ist eine ausdrücklich
 festgelegte Layoutvariante mit intakter QR-Ruhezone, keine pixelgenaue Kopie der
-Paper-Abbildung. Ein späterer Decoder muss diese Geometrie kennen.
+Paper-Abbildung. Der Kamera-Decoder verwendet genau diese Geometrie.
 
 Der Balken transportiert noch keine Nutzdatenanzahl oder Protokollversion.
-Diese Angaben müssen später im Transferprotokoll enthalten sein, damit der
-Empfänger Dummys sicher von Nutzdaten unterscheiden kann.
+Der aktuelle Decoder erkennt ausschliesslich das exakte Dummy-Muster des
+Encoders und erlaubt höchstens zwei Dummys am Ende. Für das spätere
+Transferprotokoll müssen Nutzdatenanzahl und Protokollversion explizit mitgeführt werden.
 
 `MlqrRasterView` zeichnet vorbereitete Pixel ohne Kantenglättung und mit
 ganzzahliger physischer Modulgrösse. Der ViewModel koordiniert Testdaten und
@@ -117,6 +142,94 @@ Schema 1 statt des aktuellen Schema 2. Sie wurden in dieser Änderung nicht
 bearbeitet. Die Debug-Darstellung wurde als Widget gerendert und visuell
 geprüft; ein Hardware-Kameratest ist noch nicht erfolgt.
 
-Nächster Meilenstein: digitale Entschichtung und Rückgewinnung der ursprünglichen
-Bytes über einen normalen QR-Decoder. Erst danach folgen Kamera-Lokalisierung,
-Farbkalibrierung und der vollständige verschlüsselte Transfer.
+## Kamera-Scanner
+
+Die Haupt-App öffnet unter „Datentransfer → Auf diesem Gerät empfangen“ den
+Scan-Screen: Zurück-Pfeil, Livebild der rückseitigen Kamera, Scanrahmen und
+Abbruch. Der Rahmen dient nur der Orientierung; ausgewertet wird das gesamte
+Bild. Code, Ruhezone und Referenzbalken müssen vollständig sichtbar sein.
+Die Kamera wird beim Verlassen oder beim Hintergrundwechsel freigegeben.
+Bei Rückkehr startet eine neue Sitzung; verspätete Ergebnisse einer alten
+Sitzung werden ignoriert. Nach 45 Sekunden ohne vollständiges Ergebnis folgt
+die Fehleransicht. Ein unlesbares Einzelbild beendet den Scan nicht.
+
+`MlqrCameraSource` kapselt die native Kamera. Das Paket `camera` liefert rohe
+Farbbilder, auch wenn ein Standard-Barcode-Scanner den MLQR nicht erkennt.
+BGRA8888 (iOS) und dreiplanares YUV420 (Android) werden unter Berücksichtigung
+der Zeilen- und Pixelabstände in RGB umgerechnet. Es wird kein Audio
+aufgenommen; Bilder werden weder als Dateien abgelegt noch hochgeladen.
+Bis zu zwei Bilder pro Sekunde werden übernommen; maximal eine Dekodierung
+läuft gleichzeitig in einem Isolate. Die längste Bildseite wird auf maximal
+1280 Pixel reduziert, was bei sehr kleinen Modulen die Lesbarkeit begrenzt.
+
+`MlqrDecoderService.decodeRaster(core, opticalLayerCount: ...)` rekonstruiert
+mit den Teilmengensummen der Paper-Partition die Schwarzweissmatrizen.
+`decodeImage(image)` sucht zunächst die Positionsmuster, berechnet die
+Abbildung auf das Modulraster, liest den Referenzbalken und normalisiert die
+Kanäle anhand des schwarzen Positionsmusters und der weissen Ruhezone.
+Dies ist eine einfache kanalseparate Farbkorrektur, keine allgemeine
+Kalibrierung für beliebige Kameras, Reflexionen oder Farbmischungen.
+
+Der isolierte `MlqrQrAdapter` verwendet `zxing2` 0.2.4 für Lokalisierung,
+Standard-QR-Dekodierung und deren Reed-Solomon-Fehlerkorrektur. Die Version ist
+fixiert, weil die Bibliothek die benötigten Matrix-APIs nur intern exportiert.
+Zurückgegeben werden die QR-Byte-Segmente, nicht die QR-Datencodewörter oder
+ein verlustbehaftet dekodierter Text. Alle Nutzdatenebenen müssen dekodierbar
+sein. Mehrdeutige Farben, fehlende Referenzen oder beschädigte Ebenen führen
+zu keinem Erfolg; Standard-QR ohne Referenzbalken wird nicht akzeptiert.
+
+Ein `TransferCodeRead` zeigt „Multi-Layer-QR gelesen“, Ebenenzahl und in den
+Details begrenzte Textvorschauen der gelesenen Pakete. Es bestätigt weder
+kryptografische Authentizität noch Speicherung von Gesundheitsdaten.
+`TransferSucceeded` bleibt dem späteren geprüften Datenbankimport vorbehalten.
+Es gibt noch kein Sequenzprotokoll, keinen Paket-Hash/MAC und keinen Rückkanal
+für Bestätigungen auf dem Sender. Die optische Lesbarkeit allein schützt nicht
+vor fremden Lesern.
+
+### Prüfung des Empfangs
+
+```sh
+flutter test test/mlqr_decoder_test.dart test/transfer_receive_test.dart test/transfer_result_test.dart test/transfer_send_test.dart test/mlqr_encoder_test.dart test/navigation_test.dart
+dart analyze lib test integration_test
+```
+
+Automatisiert geprüft werden rohe Bytes für 1–15 Ebenen mit/ohne Dummys,
+Lokalisierung in synthetischen gedrehten und farbveränderten Bildern,
+Referenzbalken, beschädigte Ebenen, BGRA-/YUV-Strides, der Isolate-Pfad,
+Navigation, Berechtigungsfehler, Timeout und Freigabe der Kamera.
+Diese Prüfungen ersetzen keinen Display-zu-Kamera-Test mit echten Smartphones.
+Insbesondere die zuverlässige Kameraerkennung von 15 Ebenen ist nicht belegt.
+
+Für einen Gerätetest die App vollständig stoppen und neu bauen (`flutter run`
+auf dem gewählten Smartphone). Hot Reload integriert die neue native
+Kamera-Bibliothek nicht. Auf Gerät A die Sendeseite öffnen, auf Gerät B den
+Empfang wählen und die Kamerafreigabe bestätigen. Erwartet werden ein Livebild,
+die drei ursprünglichen Testpakete und keine importierten Gesundheitsdaten.
+Anschliessend Abbruch, verweigerte Freigabe, Hintergrundwechsel und erneuten
+Versuch prüfen. Der Hardwaretest steht noch aus.
+
+Nächster Meilenstein: Messung und Verbesserung der Kamera-Lesbarkeit auf echten
+Geräten, danach das authentifizierte verschlüsselte Transferprotokoll mit
+Sequenz-Rekonstruktion und atomarem Datenbankimport.
+
+Prüfstand Kamera-Screen: Die 32 betroffenen Encoder-, Decoder-, Empfangs-,
+Sende-, Ergebnis- und Navigationstests bestehen nach der Layoutkorrektur
+(die Empfangstests wurden gezielt erneut ausgeführt). Die neuen/geänderten
+Dart-Dateien haben keine Analyzer-Befunde; projektweit verbleiben die
+13 bestehenden Stilhinweise. Die Startansicht wurde gerendert und visuell
+geprüft, zusätzlich bei 320 Pixeln Breite mit 1,5-facher Textgrösse getestet.
+
+Die native iOS-Kamera-Einbindung kompiliert mit folgendem ARM64-Simulator-Build:
+
+```sh
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Debug \
+  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+```
+
+Der allgemeine `flutter build ios --simulator --debug` scheitert in dieser
+lokalen Toolchain in `debug_unpack_ios` bei der Prüfung von `arm64 x86_64`,
+obwohl `lipo -info` beide Architekturen meldet. Der gezielte ARM64-Build ist
+erfolgreich. Es wurden dafür keine dauerhaften Architektur-Einstellungen
+im Projekt geändert. Android-Build und echte Smartphone-Scans wurden hier
+noch nicht verifiziert.

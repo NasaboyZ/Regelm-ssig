@@ -1,23 +1,75 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/transfer_result.dart';
 import '../../theme/app_colors.dart';
+import '../../viewmodels/transfer_result_view_model.dart';
+import '../../viewmodels/transfer_send_view_model.dart';
+import '../../viewmodels/transfer_receive_view_model.dart';
+import 'transfer_receive_view.dart';
 import '../../widgets/transfer/transfer_illustration.dart';
+import 'transfer_send_view.dart';
+import 'transfer_result_view.dart';
 
 class TransferView extends StatelessWidget {
-  const TransferView({super.key});
+  const TransferView({super.key, this.receiveViewModelFactory});
 
-  void _showAvailability(BuildContext context, {required bool sending}) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            sending
-                ? 'Das Senden per QR-Code ist noch nicht verfügbar.'
-                : 'Das Empfangen per QR-Code ist noch nicht verfügbar.',
+  final TransferReceiveViewModel Function()? receiveViewModelFactory;
+
+  void _openSend(BuildContext context) {
+    final viewModel = TransferSendViewModel.preview();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TransferSendView(viewModel: viewModel),
+      ),
+    );
+  }
+
+  Future<void> _openReceive(BuildContext context) async {
+    while (true) {
+      if (!context.mounted) return;
+      final result = await Navigator.of(context).push<TransferResult>(
+        MaterialPageRoute(
+          builder: (_) =>
+              TransferReceiveView(viewModel: receiveViewModelFactory?.call()),
+        ),
+      );
+      if (!context.mounted || result == null) return;
+      final action = await Navigator.of(context).push<TransferResultAction>(
+        MaterialPageRoute(
+          builder: (_) => TransferResultView(
+            viewModel: TransferResultViewModel(result: result),
           ),
         ),
       );
+      if (action != TransferResultAction.retry) return;
+    }
+  }
+
+  Future<void> _previewResult(
+    BuildContext context, {
+    required bool success,
+  }) async {
+    final result = success
+        ? TransferSucceeded(
+            codeCount: 12,
+            importedCategories: TransferDataCategory.values.toSet(),
+          )
+        : TransferFailed(
+            reason: TransferFailureReason.incomplete,
+            receivedCodeCount: 9,
+            expectedCodeCount: 12,
+          );
+    final action = await Navigator.of(context).push<TransferResultAction>(
+      MaterialPageRoute(
+        builder: (_) => TransferResultView(
+          viewModel: TransferResultViewModel(result: result, isPreview: true),
+        ),
+      ),
+    );
+    if (context.mounted && action == TransferResultAction.retry) {
+      _openReceive(context);
+    }
   }
 
   @override
@@ -67,12 +119,11 @@ class TransferView extends StatelessWidget {
             const SizedBox(height: 12),
             _TransferAction(
               title: 'Von diesem Gerät senden',
-              description:
-                  'Verschlüsselte QR-Codes auf deinem bisherigen Gerät anzeigen.',
+              description: 'Multi-Layer-QR-Code mit Testdaten ansehen.',
               icon: Icons.mobile_screen_share_outlined,
               accent: AppColors.burntOrange,
               tint: const Color(0xFFFCF4EF),
-              onTap: () => _showAvailability(context, sending: true),
+              onTap: () => _openSend(context),
             ),
             const SizedBox(height: 10),
             _TransferAction(
@@ -82,7 +133,7 @@ class TransferView extends StatelessWidget {
               accent: const Color(0xFF456C70),
               tint: const Color(0xFFF1F8F8),
               borderColor: AppColors.pluto,
-              onTap: () => _showAvailability(context, sending: false),
+              onTap: () => _openReceive(context),
             ),
             const SizedBox(height: 26),
             const Divider(height: 1),
@@ -95,7 +146,7 @@ class TransferView extends StatelessWidget {
                   '1. Wähle auf deinem bisherigen Gerät „Von diesem Gerät senden“.\n\n'
                   '2. Wähle auf deinem neuen Gerät „Auf diesem Gerät empfangen“.\n\n'
                   '3. Scanne mit dem neuen Gerät die QR-Codes auf dem bisherigen Gerät.\n\n'
-                  'Die Übertragung per QR-Code ist noch nicht verfügbar.',
+                  'Aktuell kannst du einen Multi-Layer-QR-Code mit Testpaketen senden und lesen. Der Gesundheitsdatenimport folgt separat.',
             ),
             const Divider(height: 1),
             const _TransferExplanation(
@@ -107,7 +158,7 @@ class TransferView extends StatelessWidget {
                   'Deine Zyklusdaten werden lokal verschlüsselt gespeichert. '
                   'Für den Gerätewechsel ist eine direkte Übertragung über '
                   'verschlüsselte QR-Codes vorgesehen – ohne Konto, Cloud oder Server. '
-                  'Diese Funktion ist noch nicht verfügbar.',
+                  'Der verschlüsselte Gesundheitsdaten-Transfer wird noch vorbereitet.',
             ),
             const Divider(height: 1),
             const SizedBox(height: 24),
@@ -132,6 +183,26 @@ class TransferView extends StatelessWidget {
                 ),
               ],
             ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 24),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('Ergebnisansichten testen'),
+                subtitle: const Text('Vorschau ohne Datenübertragung'),
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _previewResult(context, success: true),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Erfolg ansehen'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _previewResult(context, success: false),
+                    icon: const Icon(Icons.error_outline),
+                    label: const Text('Fehler ansehen'),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
