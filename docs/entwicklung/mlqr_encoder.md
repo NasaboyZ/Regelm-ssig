@@ -1,23 +1,22 @@
 # MLQR: Erzeugung und Kameraempfang
 
-## Start der separaten Testansicht
+## Testen
+
+Die frühere separate MLQR-Demo-Startdatei wurde entfernt. MLQR wird jetzt nur
+noch innerhalb der vollständigen Zyklus-Demo getestet:
 
 ```sh
-flutter run -t lib/main_mlqr_demo.dart
+flutter run -t lib/main_cycle_demo.dart
 ```
 
-Die Demo ist nur im Debug-Modus startbar. Sie verwendet feste UTF-8-Testtexte,
-keine Datenbank, Gesundheitsdaten, Kamera oder Netzwerkverbindung. Standard:
-drei Nutzdatenebenen, Dummy-Ergänzung aktiviert. Die Auswahl reicht von 1 bis 15.
-In der normalen App öffnet „Datentransfer → Von diesem Gerät senden“ ebenfalls
-eine Vorschau mit einem echten MLQR aus drei festen Testdatenpaketen. Diese
-Sendeseite zeigt noch keine Gesundheitsdaten und verwendet keine Datenbank.
-Sie besitzt einen Zurück-Pfeil und „Transfer abbrechen“, die beide zur
-Transferübersicht zurückführen. Der Fortschritt bleibt bei null: Es werden
-weder Scan-Bestätigungen simuliert noch Codes automatisch weitergeschaltet.
-„Auf diesem Gerät empfangen“ öffnet den Kamera-Scanner für diesen einzelnen
-Testcode. Verschlüsselte Transfersessions und Gesundheitsdatenimport sind noch
-nicht angebunden.
+Für reine Encoder- und Decoder-Prüfungen werden die automatisierten Tests
+verwendet. Sie verwenden feste UTF-8-Testtexte und keine echten Gesundheitsdaten.
+In der normalen App kann „Datentransfer → Von diesem Gerät senden“ eine
+komprimierte Snapshot-Sequenz ohne Passphrase erzeugen. Die Chunks werden auf
+mehrere MLQR-Bilder verteilt und automatisch weitergeschaltet. „Auf diesem Gerät
+empfangen“ öffnet den Kamera-Scanner; vollständige MLQR-Codes werden erkannt,
+ihre Chunks sitzungsbezogen gesammelt und erst nach vollständiger Prüfung in die
+lokale Datenbank übernommen.
 
 Im Debug-Modus gibt es in der Transferübersicht zusätzlich den aufklappbaren
 Bereich „Ergebnisansichten testen“. „Erfolg ansehen“ und „Fehler ansehen“ öffnen
@@ -44,7 +43,10 @@ Das lokale Paper liegt unter `assets/refer/`. Es wurde kein Code aus der früher
 praktischen Vorarbeit übernommen. Code und diese Dokumentation wurden mit
 Unterstützung von Codex erstellt.
 
-Implementiert ist die Erzeugung, noch kein Decoder oder optischer Transfer.
+Implementiert sind Erzeugung, digitaler Decoder, Kamerapfad und eine
+sequenzielle Chunk-Sammlung. Ein einzelner MLQR-Code wird weiterhin als
+untrennbare optische Einheit dekodiert; einzelne Farblayer werden nicht separat
+über die Kamera übertragen.
 Die Grenze von 15 Ebenen ist ein Implementierungslimit in Anlehnung an das Paper,
 kein Nachweis für Kameratauglichkeit.
 
@@ -106,8 +108,9 @@ Paper-Abbildung. Der Kamera-Decoder verwendet genau diese Geometrie.
 
 Der Balken transportiert noch keine Nutzdatenanzahl oder Protokollversion.
 Der aktuelle Decoder erkennt ausschliesslich das exakte Dummy-Muster des
-Encoders und erlaubt höchstens zwei Dummys am Ende. Für das spätere
-Transferprotokoll müssen Nutzdatenanzahl und Protokollversion explizit mitgeführt werden.
+Encoders und erlaubt höchstens zwei Dummys am Ende. Die Chunk-Anzahl und
+Protokollversion werden deshalb nicht aus dem Balken, sondern aus den
+Transfer-Chunk-Metadaten gelesen.
 
 `MlqrRasterView` zeichnet vorbereitete Pixel ohne Kantenglättung und mit
 ganzzahliger physischer Modulgrösse. Der ViewModel koordiniert Testdaten und
@@ -199,21 +202,73 @@ gemessenen RGB-Werte stärker verschieben als die erlaubte Toleranz. Eine Ebene
 ist dann nicht mehr eindeutig erkennbar. Der Decoder verwirft den gesamten Code;
 fehlt dadurch ein Chunk, wird die Transfersession nicht importiert.
 
-Die adaptive QR-Größenwahl begrenzt inzwischen die QR-Version auf einen
-kamerafreundlicheren Zielbereich. Sie beseitigt jedoch nicht die enge Farbstufung
+Die adaptive QR-Größenwahl begrenzt inzwischen die QR-Version standardmässig auf
+Version 10. Dadurch werden die QR-Module auf dem Display grösser und die
+Jahresdaten werden auf mehrere MLQR-Bilder verteilt. Sie beseitigt jedoch nicht die enge Farbstufung
 bei 15 Ebenen. Für eine robuste Hardwareübertragung muss die Layer-Anzahl daher
 künftig adaptiv gewählt werden: bis zu 15 Ebenen bei ausreichender
 Farbtrennbarkeit, ansonsten 9 oder 7 Ebenen und entsprechend mehr MLQR-Bilder.
 Das erhöht die Bildanzahl, kann aber die zuverlässige Übertragung eines Jahres-
 oder Mehrjahresbestands ermöglichen.
 
-Ein `TransferCodeRead` zeigt „Multi-Layer-QR gelesen“, Ebenenzahl und in den
-Details begrenzte Textvorschauen der gelesenen Pakete. Es bestätigt weder
-kryptografische Authentizität noch Speicherung von Gesundheitsdaten.
-`TransferSucceeded` bleibt dem späteren geprüften Datenbankimport vorbehalten.
-Es gibt noch kein Sequenzprotokoll, keinen Paket-Hash/MAC und keinen Rückkanal
-für Bestätigungen auf dem Sender. Die optische Lesbarkeit allein schützt nicht
-vor fremden Lesern.
+Ein empfangener MLQR-Code wird zunächst vollständig dekodiert. Die darin
+enthaltenen Chunks werden anhand von `transferId`, `index` und `total` in einem
+flüchtigen `TransferChunkAccumulator` gesammelt. Identische Duplikate sind
+idempotent; widersprüchliche Wiederholungen werden abgelehnt. Während der
+Sammlung zeigt die Empfangsansicht den Fortschritt und die fehlenden Chunks.
+`TransferSucceeded` wird erst nach vollständiger Sequenz, Dekompression,
+CBOR-Deserialisierung und erfolgreichem Datenbank-Commit erzeugt. Bei Abbruch,
+Timeout oder Abschluss werden die temporären Chunks aus dem Arbeitsspeicher
+entfernt.
+
+### Temporale Layer als Fallback
+
+Jeder Nutzdatenlayer enthält bereits einen vollständigen QR-Code mit einem
+kompletten `TransferChunk`. Deshalb kann die Anwendung zusätzlich eine temporale
+Sequenz erzeugen: Sie zeigt die vorhandenen Layer nacheinander als einzelne
+Schwarzweiss-QR-Codes an. Der Empfänger versucht nach einem fehlgeschlagenen
+farbigen MLQR-Scan automatisch, den aktuellen Kameraframe als normalen QR-Code
+zu dekodieren. Die Chunk-Metadaten bleiben unverändert; `transferId`, `index`
+und `total` ordnen die Layer wieder der Transfersession zu.
+
+Der Sender zeigt zunächst die farbigen MLQR-Codes und anschliessend die
+temporalen Layer. Die temporale Runde wird wiederholt. Dadurch können einzelne
+verlorene Kameraframes nachgeholt werden, ohne einen Rückkanal zwischen den
+Geräten einzuführen. Die Methode ist langsamer, vermeidet aber die engen
+RGB-Abstände der 15-Layer-Darstellung und kann auch mit einem gewöhnlichen
+Schwarzweiss-QR-Reader grundsätzlich erkannt werden.
+
+### Erkenntnis aus dem aktuellen Hardwaretest
+
+Beim Test zwischen einem Apple-Simulator beziehungsweise Gerät und einem
+zweiten Smartphone beendet die Empfangsansicht den Vorgang aktuell mit
+„Übertragung nicht abgeschlossen“, bevor ungefähr die Hälfte der angezeigten
+QR-Bilder verarbeitet wurde. Der digitale Jahresdatensatz funktioniert in den
+automatisierten Tests; deshalb ist die Kompression selbst bisher nicht als
+Fehlerursache bestätigt.
+
+Bestätigte Code-Fakten sind, dass der Empfänger nach der Initialisierung einen
+Timeout von 45 Sekunden verwendet, Chunks nur nach erfolgreicher Dekodierung
+sammelt und keinen Rückkanal zum Sender besitzt. Der Sender zeigt die Sequenz
+unabhängig davon weiter an, ob ein Bild auf dem Empfänger erfolgreich gelesen
+wurde. Zudem zählt die Anzeige Bilder, während der Empfänger Transfer-Chunks
+zählt. Ein farbiger MLQR kann mehrere Chunks enthalten, ein temporaler Layer
+enthält dagegen nur einen Chunk. Die sichtbare Bildposition entspricht deshalb
+nicht direkt dem Empfangsfortschritt.
+
+Noch nicht bestätigt ist, an welcher Stelle der reale Kamerapfad scheitert.
+Mögliche Fehlerstellen sind die MLQR-Lokalisierung, der Referenzbalken, die
+RGB-Farbtrennung, die Dekodierung eines rekonstruierten Layers oder die
+temporale Schwarzweiss-QR-Erkennung. Der frühe Abbruch beweist daher noch
+nicht, dass die zweite Hälfte der Daten grundsätzlich fehlerhaft ist; er zeigt
+zunächst, dass der aktuelle Ablauf die vollständige Sequenz innerhalb des
+Timeouts nicht zuverlässig erkennt.
+
+Für die nächste Hardwaremessung müssen empfangene und erwartete Chunk-Anzahl,
+der zuletzt erfolgreiche Decoderpfad sowie die verstrichene Zeit getrennt
+erfasst werden. Erst danach lässt sich entscheiden, ob die Anzeigezeit, der
+Timeout, die Decoderkalibrierung oder die Sequenzsteuerung angepasst werden
+muss.
 
 ### Prüfung des Empfangs
 
@@ -238,8 +293,9 @@ Anschliessend Abbruch, verweigerte Freigabe, Hintergrundwechsel und erneuten
 Versuch prüfen. Der Hardwaretest steht noch aus.
 
 Nächster Meilenstein: Messung und Verbesserung der Kamera-Lesbarkeit auf echten
-Geräten, danach das authentifizierte verschlüsselte Transferprotokoll mit
-Sequenz-Rekonstruktion und atomarem Datenbankimport.
+Geräten. Die digitale Jahresdatensatz-Prüfung und die sequenzielle
+Chunk-Rekonstruktion sind bereits automatisiert; der Hardwaretest mit realen
+Display- und Kameraabweichungen steht weiterhin aus.
 
 Prüfstand Kamera-Screen: Die 32 betroffenen Encoder-, Decoder-, Empfangs-,
 Sende-, Ergebnis- und Navigationstests bestehen nach der Layoutkorrektur

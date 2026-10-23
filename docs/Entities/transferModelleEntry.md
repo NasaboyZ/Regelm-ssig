@@ -60,7 +60,8 @@ Vor dem Import müssen mindestens folgende Fälle geprüft und abgelehnt werden:
 - Chunks aus unterschiedlichen Sessions, erkennbar an nicht passenden
   `transferId`-Werten
 - fehlende Chunks innerhalb der erwarteten Menge
-- doppelte Chunk-Indizes
+- widersprüchliche doppelte Chunk-Indizes; identische Wiederholungen werden
+  idempotent ignoriert
 - ungültige Indizes oder widersprüchliche `total`-Werte
 - nicht passende Versionen oder ungültige Mindestwerte im Manifest
 - beschädigte, nicht entschlüsselbare oder unvollständige Payloads
@@ -87,8 +88,10 @@ Verschlüsselung; der verschlüsselte Pfad bleibt als separater Codec-Pfad
 vorhanden.
 Bis zu 15 Chunks werden zu einem MLQR gebündelt; mehrere MLQRs können über
 `transferId`, `index` und `total` wieder zu einer Transfersession zusammengesetzt
-werden. Der Import wird erst nach vollständiger Entschlüsselung, Dekompression,
-CBOR-Deserialisierung und Snapshot-Validierung freigegeben.
+werden. Der sitzungsbezogene `TransferChunkAccumulator` hält bestätigte Chunks
+bis zur Vollständigkeit nur im Arbeitsspeicher. Der Import wird erst nach
+vollständiger Entschlüsselung, Dekompression, CBOR-Deserialisierung und
+Snapshot-Validierung freigegeben.
 
 Die Repository-Integration nutzt beim Sender den echten `TrackingSnapshot` und
 speichert beim Empfänger erst nach vollständigem Empfang und erfolgreichem

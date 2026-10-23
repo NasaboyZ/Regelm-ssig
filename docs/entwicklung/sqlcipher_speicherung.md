@@ -4,9 +4,7 @@
 
 Die Tageserfassung speichert beim normalen Entwicklungsstart (`lib/main.dart`,
 Debug-Modus) in einer verschlüsselten SQLite-Datenbank. Zusätzlich sind alle
-fachlichen Datensätze mit AES-256-GCM verschlüsselt (Schema-Version 2). Die bisherige
-separate Startdatei `lib/main_sqlcipher_debug.dart` ruft denselben Einstieg auf. Beide
-verwenden dieselbe Datei und dieselben zwei Schlüssel. Dies ist ausschliesslich für
+fachlichen Datensätze mit AES-256-GCM verschlüsselt (Schema-Version 2). Dies ist ausschliesslich für
 erfundene Testdaten vorgesehen: Beide Testschlüssel sind öffentlich im Quellcode
 enthalten und bieten deshalb keinen Schutz für persönliche Gesundheitsdaten.
 
@@ -24,8 +22,8 @@ zusätzliche Verschlüsselung der Datensätze mit einem separaten 32-Byte-Schlü
 
 ## Starten und Einträge wieder ansehen
 
-In VS Code die normale Startkonfiguration oder **Regelmässig – SQLCipher (nur
-Testdaten)** wählen und ein Android-Gerät oder einen iOS-Simulator auswählen.
+In VS Code die normale Startkonfiguration **lib/main.dart** wählen und ein
+Android-Gerät oder einen iOS-Simulator auswählen.
 Alternativ:
 
 ```sh
