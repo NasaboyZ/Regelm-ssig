@@ -6,21 +6,46 @@ import '../../theme/app_colors.dart';
 import '../../viewmodels/transfer_result_view_model.dart';
 import '../../viewmodels/transfer_send_view_model.dart';
 import '../../viewmodels/transfer_receive_view_model.dart';
+import '../../repositories/tracking_repository.dart';
+import '../../services/mlqr_transfer_service.dart';
 import 'transfer_receive_view.dart';
 import '../../widgets/transfer/transfer_illustration.dart';
 import 'transfer_send_view.dart';
 import 'transfer_result_view.dart';
 
 class TransferView extends StatelessWidget {
-  const TransferView({super.key, this.receiveViewModelFactory});
+  const TransferView({
+    super.key,
+    this.trackingRepository,
+    this.receiveViewModelFactory,
+  });
 
+  final TrackingRepository? trackingRepository;
   final TransferReceiveViewModel Function()? receiveViewModelFactory;
 
-  void _openSend(BuildContext context) {
-    final viewModel = TransferSendViewModel.preview();
+  Future<void> _openSend(BuildContext context) async {
+    final repository = trackingRepository;
+    if (repository == null) {
+      final viewModel = TransferSendViewModel.preview();
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TransferSendView(viewModel: viewModel),
+        ),
+      );
+      return;
+    }
+    await repository.load();
+    final sequence = await MlqrTransferService().encodeDevelopment(
+      repository.snapshot,
+      transferId: 'transfer-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => TransferSendView(viewModel: viewModel),
+        builder: (_) => TransferSendView(
+          viewModel: TransferSendViewModel.sequence(sequence),
+        ),
       ),
     );
   }
@@ -30,8 +55,11 @@ class TransferView extends StatelessWidget {
       if (!context.mounted) return;
       final result = await Navigator.of(context).push<TransferResult>(
         MaterialPageRoute(
-          builder: (_) =>
-              TransferReceiveView(viewModel: receiveViewModelFactory?.call()),
+          builder: (_) => TransferReceiveView(
+            viewModel:
+                receiveViewModelFactory?.call() ??
+                TransferReceiveViewModel(repository: trackingRepository),
+          ),
         ),
       );
       if (!context.mounted || result == null) return;
@@ -103,7 +131,7 @@ class TransferView extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Übertrage deine verschlüsselten Zyklusdaten direkt zwischen '
+              'Übertrage deine lokal gespeicherten Zyklusdaten direkt zwischen '
               'deinen Geräten – ohne Konto und ohne Cloud.',
               style: TextStyle(
                 fontSize: 16,
@@ -119,7 +147,8 @@ class TransferView extends StatelessWidget {
             const SizedBox(height: 12),
             _TransferAction(
               title: 'Von diesem Gerät senden',
-              description: 'Multi-Layer-QR-Code mit Testdaten ansehen.',
+              description:
+                  'Gespeicherte Daten als Multi-Layer-QR-Codes senden.',
               icon: Icons.mobile_screen_share_outlined,
               accent: AppColors.burntOrange,
               tint: const Color(0xFFFCF4EF),
@@ -146,7 +175,7 @@ class TransferView extends StatelessWidget {
                   '1. Wähle auf deinem bisherigen Gerät „Von diesem Gerät senden“.\n\n'
                   '2. Wähle auf deinem neuen Gerät „Auf diesem Gerät empfangen“.\n\n'
                   '3. Scanne mit dem neuen Gerät die QR-Codes auf dem bisherigen Gerät.\n\n'
-                  'Aktuell kannst du einen Multi-Layer-QR-Code mit Testpaketen senden und lesen. Der Gesundheitsdatenimport folgt separat.',
+                  'Die Daten werden im aktuellen Entwicklungsmodus ohne Passphrase übertragen und erst nach vollständigem Empfang importiert.',
             ),
             const Divider(height: 1),
             const _TransferExplanation(
@@ -155,10 +184,9 @@ class TransferView extends StatelessWidget {
               color: Color(0xFF857995),
               background: Color(0xFFEDE8F1),
               text:
-                  'Deine Zyklusdaten werden lokal verschlüsselt gespeichert. '
-                  'Für den Gerätewechsel ist eine direkte Übertragung über '
-                  'verschlüsselte QR-Codes vorgesehen – ohne Konto, Cloud oder Server. '
-                  'Der verschlüsselte Gesundheitsdaten-Transfer wird noch vorbereitet.',
+                  'Die lokale Speicherung bleibt verschlüsselt. Der aktuelle '
+                  'Entwicklungsmodus überträgt die QR-Payload jedoch ohne '
+                  'Passphrase. Biometrische Freigabe folgt später.',
             ),
             const Divider(height: 1),
             const SizedBox(height: 24),

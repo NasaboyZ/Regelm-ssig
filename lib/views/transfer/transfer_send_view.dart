@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../models/mlqr_code.dart';
@@ -5,10 +7,38 @@ import '../../theme/app_colors.dart';
 import '../../viewmodels/transfer_send_view_model.dart';
 import '../../widgets/transfer/mlqr_raster_view.dart';
 
-class TransferSendView extends StatelessWidget {
+class TransferSendView extends StatefulWidget {
   const TransferSendView({super.key, required this.viewModel});
 
   final TransferSendViewModel viewModel;
+
+  @override
+  State<TransferSendView> createState() => _TransferSendViewState();
+}
+
+class _TransferSendViewState extends State<TransferSendView> {
+  Timer? _timer;
+  int _index = 0;
+
+  TransferSendViewModel get viewModel => widget.viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    if (viewModel.codeCount > 1) {
+      _timer = Timer.periodic(viewModel.codeInterval, (_) {
+        if (mounted) {
+          setState(() => _index = (_index + 1) % viewModel.codeCount);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -36,7 +66,7 @@ class TransferSendView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'ÜBERTRAGUNG · VORSCHAU',
+                  'ÜBERTRAGUNG · ENTWICKLUNGSMODUS',
                   style: TextStyle(
                     fontSize: 12,
                     letterSpacing: 1.5,
@@ -44,9 +74,10 @@ class TransferSendView extends StatelessWidget {
                     color: AppColors.muted,
                   ),
                 ),
-                const SizedBox(height: 10),
+
+                const SizedBox(height: 12),
                 Text(
-                  'Code ${viewModel.codeNumber} von ${viewModel.codeCount}',
+                  'Code ${_index + 1} von ${viewModel.codeCount}',
                   style: const TextStyle(
                     fontSize: 32,
                     height: 1.15,
@@ -57,18 +88,30 @@ class TransferSendView extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Vorschau mit Testdaten. Es werden noch keine '
-                  'Gesundheitsdaten übertragen.',
+                  'QR-Code Sceenen um '
+                  'Gesundheitsdaten zu übertragen.',
                   style: TextStyle(
                     fontSize: 16,
                     height: 1.5,
                     color: AppColors.muted,
                   ),
                 ),
+                if (!viewModel.isPreview) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${viewModel.codeCount} Bilder · ${viewModel.chunkCount} Chunks · '
+                    'bis zu ${viewModel.maxLayersPerCode} Ebenen · '
+                    'QR-Version ${viewModel.maxQrVersion}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 _CodeCard(
-                  code: viewModel.code,
-                  label: '${viewModel.codeNumber} / ${viewModel.codeCount}',
+                  code: viewModel.codeAt(_index),
+                  label: '${_index + 1} / ${viewModel.codeCount}',
                 ),
                 const SizedBox(height: 24),
                 LinearProgressIndicator(
@@ -92,7 +135,9 @@ class TransferSendView extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '${viewModel.confirmedCodeCount} Codes bestätigt · Testvorschau',
+                        viewModel.isPreview
+                            ? '${viewModel.confirmedCodeCount} Codes bestätigt · Testvorschau'
+                            : '${viewModel.confirmedCodeCount} Codes bestätigt · ohne Passphrase',
                         style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.muted,
@@ -180,7 +225,7 @@ class _CodeCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Semantics(
-              label: 'Multi-Layer-QR-Code mit drei Testdatenebenen',
+              label: 'Multi-Layer-QR-Code mit Transferdaten',
               image: true,
               child: MlqrRasterView(raster: code.displayRaster),
             ),

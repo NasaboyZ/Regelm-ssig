@@ -36,8 +36,9 @@ class MlqrEncoderService {
       }
       final matrices = <QrModuleMatrix>[];
       for (final packet in packets) {
+        final exactPacket = Uint8List.fromList(packet);
         final code = QrCode(version, errorCorrectionLevel)
-          ..addByteData(ByteData.sublistView(packet));
+          ..addByteData(ByteData.sublistView(exactPacket));
         // Public API also validates capacity at the version-40 boundary.
         final image = QrImage(code);
         matrices.add(

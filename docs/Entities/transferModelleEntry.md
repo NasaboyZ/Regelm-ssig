@@ -77,6 +77,23 @@ Zuordnung der Übertragung, beweist aber keine Authentizität. Insbesondere
 beweist ein Manifest allein nicht, dass die Daten von einem vertrauenswürdigen
 Gerät stammen oder unverändert sind.
 
+### Implementierter Codec-Stand
+
+Die erste Transfer-Pipeline ist als `TransferCodec` und `MlqrTransferService`
+implementiert. Ein `TrackingSnapshot` wird als CBOR serialisiert, mit GZIP
+komprimiert und in versionierte Chunks geteilt. Der aktuelle
+Entwicklungsmodus überträgt diese Chunks ohne Passphrase und damit ohne
+Verschlüsselung; der verschlüsselte Pfad bleibt als separater Codec-Pfad
+vorhanden.
+Bis zu 15 Chunks werden zu einem MLQR gebündelt; mehrere MLQRs können über
+`transferId`, `index` und `total` wieder zu einer Transfersession zusammengesetzt
+werden. Der Import wird erst nach vollständiger Entschlüsselung, Dekompression,
+CBOR-Deserialisierung und Snapshot-Validierung freigegeben.
+
+Die Repository-Integration nutzt beim Sender den echten `TrackingSnapshot` und
+speichert beim Empfänger erst nach vollständigem Empfang und erfolgreichem
+Zusammenführen. Die UI zeigt mehrere Codes automatisch nacheinander an.
+
 ### Noch auszuarbeitendes Transferprotokoll
 
 Die folgenden technischen Entscheidungen gehören in ein versioniertes

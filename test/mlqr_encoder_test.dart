@@ -219,7 +219,7 @@ void main() {
       for (var i = 0; i < packets.length; i++) {
         final expected = QrImage(
           QrCode(6, QrErrorCorrectLevel.M)
-            ..addByteData(ByteData.sublistView(packets[i])),
+            ..addByteData(ByteData.sublistView(Uint8List.fromList(packets[i]))),
         );
         final actual = code.layers[i].matrix;
         expect(actual.size, 41);

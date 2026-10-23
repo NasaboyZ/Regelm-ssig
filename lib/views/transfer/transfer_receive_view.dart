@@ -168,8 +168,8 @@ class _TransferReceiveViewState extends State<TransferReceiveView>
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Aktuell werden die Testpakete des Sendebildschirms gelesen. '
-                    'Es werden keine Gesundheitsdaten gespeichert.',
+                    'Die QR-Codes werden gesammelt und erst nach vollständiger '
+                    'Prüfung in die lokale Datenbank übernommen.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

@@ -6,8 +6,11 @@ import 'package:flutter/foundation.dart';
 import '../models/mlqr_camera_frame.dart';
 import '../models/mlqr_decoded.dart';
 import '../models/transfer_result.dart';
+import '../repositories/tracking_repository.dart';
 import '../services/mlqr_camera_source.dart';
 import '../services/mlqr_decoder_service.dart';
+import '../services/mlqr_transfer_service.dart';
+import '../services/transfer_codec.dart';
 
 /// Null is an expected unreadable frame while the camera is being aimed.
 Future<MlqrDecoded?> decodeCameraFrame(MlqrCameraFrame frame) =>
@@ -25,18 +28,28 @@ class TransferReceiveViewModel extends ChangeNotifier {
   TransferReceiveViewModel({
     MlqrCameraSource? source,
     Future<MlqrDecoded?> Function(MlqrCameraFrame)? decode,
+    TrackingRepository? repository,
+    MlqrTransferService? transfer,
     this.scanTimeout = const Duration(seconds: 45),
   }) : _source = source ?? DeviceMlqrCameraSource(),
-       _decode = decode ?? decodeCameraFrame;
+       _decode = decode ?? decodeCameraFrame,
+       _repository = repository,
+       _transfer = transfer ?? MlqrTransferService();
 
   final MlqrCameraSource _source;
   final Future<MlqrDecoded?> Function(MlqrCameraFrame) _decode;
+  final TrackingRepository? _repository;
+  final MlqrTransferService _transfer;
   final Duration scanTimeout;
   Future<void> _operations = Future.value();
   Timer? _timer;
   int _epoch = 0;
   bool _disposed = false;
   bool _busy = false;
+  final _chunks = <int, TransferChunk>{};
+  String? _transferId;
+  int? _expectedChunks;
+  int _receivedCodeCount = 0;
   bool initializing = true;
   bool paused = false;
   TransferResult? result;
@@ -49,6 +62,10 @@ class TransferReceiveViewModel extends ChangeNotifier {
   void resume() {
     if (_disposed || result != null) return;
     final epoch = ++_epoch;
+    _chunks.clear();
+    _transferId = null;
+    _expectedChunks = null;
+    _receivedCodeCount = 0;
     paused = false;
     initializing = true;
     _notify();
@@ -66,7 +83,15 @@ class TransferReceiveViewModel extends ChangeNotifier {
         _timer = Timer(
           scanTimeout,
           () => _finish(
-            TransferFailed(reason: TransferFailureReason.unreadable),
+            TransferFailed(
+              reason: _expectedChunks == null
+                  ? TransferFailureReason.unreadable
+                  : TransferFailureReason.incomplete,
+              receivedCodeCount: _expectedChunks == null
+                  ? null
+                  : _chunks.length,
+              expectedCodeCount: _expectedChunks,
+            ),
             epoch,
           ),
         );
@@ -93,11 +118,71 @@ class TransferReceiveViewModel extends ChangeNotifier {
     _busy = true;
     try {
       final decoded = await _decode(frame);
-      if (decoded != null) _finish(TransferCodeRead(decoded), epoch);
+      if (decoded != null) {
+        if (_repository == null) {
+          _finish(TransferCodeRead(decoded), epoch);
+        } else {
+          await _acceptTransferCode(decoded, epoch);
+        }
+      }
     } catch (_) {
       _finish(TransferFailed(reason: TransferFailureReason.unreadable), epoch);
     } finally {
       _busy = false;
+    }
+  }
+
+  Future<void> _acceptTransferCode(MlqrDecoded decoded, int epoch) async {
+    try {
+      final parsed = [
+        for (final packet in decoded.packets) TransferChunk.fromBytes(packet),
+      ];
+      if (parsed.isEmpty) return;
+      final first = parsed.first;
+      if (first.encrypted) {
+        _finish(
+          TransferFailed(reason: TransferFailureReason.verificationFailed),
+          epoch,
+        );
+        return;
+      }
+      if (_transferId != null &&
+          (first.transferId != _transferId || first.total != _expectedChunks)) {
+        return;
+      }
+      _transferId = first.transferId;
+      _expectedChunks = first.total;
+      var added = false;
+      for (final chunk in parsed) {
+        if (chunk.transferId != _transferId ||
+            chunk.total != _expectedChunks ||
+            _chunks.containsKey(chunk.index)) {
+          continue;
+        }
+        _chunks[chunk.index] = chunk;
+        added = true;
+      }
+      if (!added || _chunks.length != _expectedChunks || _disposed) return;
+      final incoming = await _transfer.codec.decode(_chunks.values);
+      final repository = _repository!;
+      await repository.load();
+      final merged = _transfer.mergeSnapshots(repository.snapshot, incoming);
+      await repository.save(merged);
+      _receivedCodeCount = _chunks.length;
+      _finish(
+        TransferSucceeded(
+          codeCount: _receivedCodeCount,
+          importedCategories: TransferDataCategory.values.toSet(),
+        ),
+        epoch,
+      );
+    } on TransferCodecException {
+      _finish(
+        TransferFailed(reason: TransferFailureReason.verificationFailed),
+        epoch,
+      );
+    } on FormatException {
+      // A standard/non-transfer QR or a partial camera frame is ignored.
     }
   }
 

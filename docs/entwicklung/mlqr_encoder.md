@@ -178,6 +178,35 @@ ein verlustbehaftet dekodierter Text. Alle Nutzdatenebenen müssen dekodierbar
 sein. Mehrdeutige Farben, fehlende Referenzen oder beschädigte Ebenen führen
 zu keinem Erfolg; Standard-QR ohne Referenzbalken wird nicht akzeptiert.
 
+### Praktische Grenze der 15 Ebenen
+
+Die Ebenen werden bei jedem MLQR tatsächlich in den drei RGB-Kanälen gestapelt.
+Die Grenze von 15 Ebenen ist deshalb keine fehlende Überlagerung, sondern eine
+Grenze der optischen Trennbarkeit. Bei 15 Ebenen verwendet die Partition
+`[8, 16, 32, 64, 135]`; die kleinste Teilmengensumme liegt damit nur acht
+RGB-Werte auseinander. Der Kamera-Decoder akzeptiert in diesem Fall bewusst nur
+eine Abweichung von höchstens `3,5` RGB-Werten zur nächstgelegenen gültigen
+Summe.
+
+Bei kleineren Transfers, zum Beispiel zwei Monaten, entstehen oft nur wenige
+Chunks und Ebenen. Die Farbabstände sind dann größer: Bei drei Ebenen lautet
+die Partition beispielsweise `[36, 72, 147]`, die Toleranz beträgt `17,5`.
+Deshalb ist der Kameraempfang in diesem Fall stabiler. Bei einem Jahresbestand
+werden dagegen häufig 15 Ebenen gefüllt. Der erzeugte Code kann mathematisch
+korrekt sein und auf dem Display vollständig erscheinen, während Beleuchtung,
+Display- und Kameraabweichungen, Reflexionen, Skalierung sowie Kompression die
+gemessenen RGB-Werte stärker verschieben als die erlaubte Toleranz. Eine Ebene
+ist dann nicht mehr eindeutig erkennbar. Der Decoder verwirft den gesamten Code;
+fehlt dadurch ein Chunk, wird die Transfersession nicht importiert.
+
+Die adaptive QR-Größenwahl begrenzt inzwischen die QR-Version auf einen
+kamerafreundlicheren Zielbereich. Sie beseitigt jedoch nicht die enge Farbstufung
+bei 15 Ebenen. Für eine robuste Hardwareübertragung muss die Layer-Anzahl daher
+künftig adaptiv gewählt werden: bis zu 15 Ebenen bei ausreichender
+Farbtrennbarkeit, ansonsten 9 oder 7 Ebenen und entsprechend mehr MLQR-Bilder.
+Das erhöht die Bildanzahl, kann aber die zuverlässige Übertragung eines Jahres-
+oder Mehrjahresbestands ermöglichen.
+
 Ein `TransferCodeRead` zeigt „Multi-Layer-QR gelesen“, Ebenenzahl und in den
 Details begrenzte Textvorschauen der gelesenen Pakete. Es bestätigt weder
 kryptografische Authentizität noch Speicherung von Gesundheitsdaten.
