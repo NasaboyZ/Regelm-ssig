@@ -77,7 +77,11 @@ class _TransferSendViewState extends State<TransferSendView> {
 
                 const SizedBox(height: 12),
                 Text(
-                  'Code ${_index + 1} von ${viewModel.codeCount}',
+                  '${viewModel.isPreview
+                      ? 'Code'
+                      : viewModel.isTemporalAt(_index)
+                      ? 'Temporaler Layer'
+                      : 'MLQR'} ${_index + 1} von ${viewModel.codeCount}',
                   style: const TextStyle(
                     fontSize: 32,
                     height: 1.15,
@@ -100,17 +104,39 @@ class _TransferSendViewState extends State<TransferSendView> {
                   const SizedBox(height: 8),
                   Text(
                     '${viewModel.codeCount} Bilder · ${viewModel.chunkCount} Chunks · '
-                    'bis zu ${viewModel.maxLayersPerCode} Ebenen · '
+                    'bis zu ${viewModel.maxPayloadLayersPerCode} Nutzdaten-Layer · '
                     'QR-Version ${viewModel.maxQrVersion}',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.muted,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${viewModel.temporalFrameCount} temporale Layer als '
+                    'Fallback · jeder Layer wird mehrfach angezeigt',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  if (viewModel.jsonBytes != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'JSON ${_formatBytes(viewModel.jsonBytes!)} · '
+                      'CBOR ${_formatBytes(viewModel.cborBytes!)} · '
+                      'GZIP ${_formatBytes(viewModel.compressedBytes!)} · '
+                      'QR-Payload ${_formatBytes(viewModel.chunkWireBytes!)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 24),
                 _CodeCard(
-                  code: viewModel.codeAt(_index),
+                  raster: viewModel.frameAt(_index).raster,
                   label: '${_index + 1} / ${viewModel.codeCount}',
                 ),
                 const SizedBox(height: 24),
@@ -182,10 +208,17 @@ class _TransferSendViewState extends State<TransferSendView> {
   );
 }
 
-class _CodeCard extends StatelessWidget {
-  const _CodeCard({required this.code, required this.label});
+String _formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  final kilobytes = bytes / 1024;
+  if (kilobytes < 1024) return '${kilobytes.toStringAsFixed(1)} KB';
+  return '${(kilobytes / 1024).toStringAsFixed(2)} MB';
+}
 
-  final MlqrCode code;
+class _CodeCard extends StatelessWidget {
+  const _CodeCard({required this.raster, required this.label});
+
+  final MlqrRgbRaster raster;
   final String label;
 
   @override
@@ -227,7 +260,7 @@ class _CodeCard extends StatelessWidget {
             Semantics(
               label: 'Multi-Layer-QR-Code mit Transferdaten',
               image: true,
-              child: MlqrRasterView(raster: code.displayRaster),
+              child: MlqrRasterView(raster: raster),
             ),
           ],
         ),

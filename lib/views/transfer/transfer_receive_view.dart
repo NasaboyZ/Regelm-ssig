@@ -177,6 +177,35 @@ class _TransferReceiveViewState extends State<TransferReceiveView>
                       color: AppColors.muted,
                     ),
                   ),
+                  if (_model.expectedChunkCount != null) ...[
+                    const SizedBox(height: 18),
+                    LinearProgressIndicator(
+                      value:
+                          _model.receivedChunkCount /
+                          _model.expectedChunkCount!,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.burntOrange,
+                      backgroundColor: const Color(0xFFF0E0D8),
+                      semanticsLabel:
+                          'Empfangene Chunks: ${_model.receivedChunkCount} '
+                          'von ${_model.expectedChunkCount}',
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _model.missingChunkIndexes.isEmpty
+                          ? '${_model.receivedChunkCount} von '
+                                '${_model.expectedChunkCount} Chunks empfangen'
+                          : '${_model.receivedChunkCount} von '
+                                '${_model.expectedChunkCount} Chunks empfangen · '
+                                '${_model.missingChunkIndexes.length} fehlen',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),

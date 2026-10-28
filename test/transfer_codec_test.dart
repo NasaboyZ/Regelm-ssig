@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/services/transfer_codec.dart';
@@ -122,5 +124,69 @@ void main() {
       () => codec.decode(mixed, passphrase: 'secret'),
       throwsA(isA<TransferCodecException>()),
     );
+  });
+
+  test('chunk accumulator is order-independent and idempotent', () async {
+    final transfer = await codec.encodeDevelopment(
+      snapshot(),
+      transferId: 'accumulator',
+      chunkSize: 20,
+    );
+    final accumulator = TransferChunkAccumulator();
+
+    accumulator.acceptAll(transfer.chunks.reversed.take(2).toList());
+    accumulator.acceptAll(transfer.chunks.take(2).toList());
+    accumulator.acceptAll(transfer.chunks);
+
+    expect(accumulator.isComplete, isTrue);
+    expect(accumulator.receivedCount, transfer.chunks.length);
+    expect(accumulator.missingIndexes, isEmpty);
+    expect(
+      accumulator.orderedChunks.map((chunk) => chunk.index),
+      orderedEquals(List.generate(transfer.chunks.length, (index) => index)),
+    );
+  });
+
+  test('chunk accumulator reports missing chunks without completing', () async {
+    final transfer = await codec.encodeDevelopment(
+      snapshot(),
+      transferId: 'missing',
+      chunkSize: 20,
+    );
+    final accumulator = TransferChunkAccumulator();
+
+    accumulator.acceptAll(transfer.chunks.take(2).toList());
+
+    expect(accumulator.isComplete, isFalse);
+    expect(accumulator.missingIndexes, isNotEmpty);
+    expect(accumulator.orderedChunks.length, 2);
+  });
+
+  test('chunk accumulator rejects conflicting duplicate indices', () async {
+    final transfer = await codec.encodeDevelopment(
+      snapshot(),
+      transferId: 'conflict',
+      chunkSize: 20,
+    );
+    final original = transfer.chunks.first;
+    final conflicting = TransferChunk(
+      transferId: original.transferId,
+      protocolVersion: original.protocolVersion,
+      index: original.index,
+      total: original.total,
+      salt: original.salt,
+      nonce: original.nonce,
+      cipherText: Uint8List.fromList([...original.cipherText, 0xff]),
+      mac: original.mac,
+      encrypted: original.encrypted,
+    );
+    final accumulator = TransferChunkAccumulator();
+    accumulator.accept(original);
+
+    expect(
+      () => accumulator.accept(conflicting),
+      throwsA(isA<TransferCodecException>()),
+    );
+    expect(accumulator.receivedCount, 1);
   });
 }

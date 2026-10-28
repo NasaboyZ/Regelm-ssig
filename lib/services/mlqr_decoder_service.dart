@@ -176,6 +176,37 @@ class MlqrDecoderService {
     throw last;
   }
 
+  /// Decode one ordinary black-and-white QR layer from the temporal fallback.
+  /// Each layer already contains one complete TransferChunk QR payload.
+  MlqrDecoded decodeTemporalImage(MlqrRgbRaster image) {
+    MlqrDecodeException last = const MlqrDecodeException(
+      'Noch kein temporaler QR-Layer erkannt.',
+    );
+    for (final grid in MlqrQrAdapter().locate(image)) {
+      try {
+        final modules = <bool>[];
+        for (var row = 0; row < grid.size; row++) {
+          for (var col = 0; col < grid.size; col++) {
+            final rgb = grid.sample(col + 0.5, row + 0.5);
+            final luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
+            modules.add(luminance < 128);
+          }
+        }
+        final packet = MlqrQrAdapter().decode(
+          QrModuleMatrix(size: grid.size, darkModules: modules),
+        );
+        return MlqrDecoded(
+          opticalLayerCount: 1,
+          qrVersion: (grid.size - 17) ~/ 4,
+          packets: [packet],
+        );
+      } on MlqrDecodeException catch (error) {
+        if (error.layersRead >= last.layersRead) last = error;
+      }
+    }
+    throw last;
+  }
+
   bool _isExactDummy(QrModuleMatrix matrix) {
     for (var row = 0; row < matrix.size; row++) {
       for (var col = 0; col < matrix.size; col++) {

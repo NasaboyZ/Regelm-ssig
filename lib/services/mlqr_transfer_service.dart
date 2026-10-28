@@ -8,12 +8,28 @@ import 'mlqr_decoder_service.dart';
 import 'mlqr_encoder_service.dart';
 import 'transfer_codec.dart';
 
+class MlqrTemporalFrame {
+  const MlqrTemporalFrame({required this.raster, required this.chunkIndex});
+
+  final MlqrRgbRaster raster;
+  final int chunkIndex;
+}
+
 class MlqrTransferSequence {
-  const MlqrTransferSequence({required this.codes, required this.package});
+  const MlqrTransferSequence({
+    required this.codes,
+    required this.temporalFrames,
+    required this.package,
+  });
   final List<MlqrCode> codes;
+  final List<MlqrTemporalFrame> temporalFrames;
   final TransferPackage package;
   int get codeCount => codes.length;
   int get chunkCount => package.chunks.length;
+  int get maxPayloadLayersPerCode => codes.fold<int>(
+    0,
+    (max, code) => code.payloadCount > max ? code.payloadCount : max,
+  );
   int get maxLayersPerCode => codes.fold<int>(
     0,
     (max, code) => code.layers.length > max ? code.layers.length : max,
@@ -30,7 +46,8 @@ class MlqrTransferService {
     MlqrEncoderService? encoder,
     MlqrDecoderService? decoder,
     TransferCodec? codec,
-    this.targetQrVersion = 20,
+    this.targetQrVersion = 10,
+    this.maxPayloadLayersPerCode = 7,
   }) : encoder = encoder ?? const MlqrEncoderService(),
        decoder = decoder ?? const MlqrDecoderService(),
        codec = codec ?? TransferCodec();
@@ -39,6 +56,7 @@ class MlqrTransferService {
   final MlqrDecoderService decoder;
   final TransferCodec codec;
   final int targetQrVersion;
+  final int maxPayloadLayersPerCode;
 
   Future<MlqrTransferSequence> encode(
     TrackingSnapshot snapshot, {
@@ -114,28 +132,68 @@ class MlqrTransferService {
   }
 
   MlqrTransferSequence _encodePackage(TransferPackage package) {
+    if (maxPayloadLayersPerCode < 1 ||
+        maxPayloadLayersPerCode > MlqrEncoderService.maxPayloadLayers) {
+      throw ArgumentError.value(
+        maxPayloadLayersPerCode,
+        'maxPayloadLayersPerCode',
+        'muss zwischen 1 und ${MlqrEncoderService.maxPayloadLayers} liegen',
+      );
+    }
     final codes = <MlqrCode>[];
+    final temporalFrames = <MlqrTemporalFrame>[];
     for (
       var offset = 0;
       offset < package.chunks.length;
-      offset += MlqrEncoderService.maxPayloadLayers
+      offset += maxPayloadLayersPerCode
     ) {
-      final end = (offset + MlqrEncoderService.maxPayloadLayers).clamp(
+      final end = (offset + maxPayloadLayersPerCode).clamp(
         0,
         package.chunks.length,
       );
-      codes.add(
-        encoder.encode(
-          package.chunks
-              .sublist(offset, end)
-              .map((chunk) => chunk.toBytes())
-              .toList(),
-        ),
+      final code = encoder.encode(
+        package.chunks
+            .sublist(offset, end)
+            .map((chunk) => chunk.toBytes())
+            .toList(),
       );
+      codes.add(code);
+      for (final layer in code.layers) {
+        if (layer.isDummy) continue;
+        temporalFrames.add(
+          MlqrTemporalFrame(
+            raster: _temporalRaster(layer.matrix),
+            chunkIndex: offset + layer.payloadIndex!,
+          ),
+        );
+      }
     }
     return MlqrTransferSequence(
       codes: List.unmodifiable(codes),
+      temporalFrames: List.unmodifiable(temporalFrames),
       package: package,
+    );
+  }
+
+  MlqrRgbRaster _temporalRaster(QrModuleMatrix matrix) {
+    final size = matrix.size + MlqrCode.quietZone * 2;
+    return MlqrRgbRaster(
+      width: size,
+      height: size,
+      pixels: [
+        for (var row = 0; row < size; row++)
+          for (var col = 0; col < size; col++)
+            row >= MlqrCode.quietZone &&
+                    row < size - MlqrCode.quietZone &&
+                    col >= MlqrCode.quietZone &&
+                    col < size - MlqrCode.quietZone &&
+                    matrix.isDark(
+                      row - MlqrCode.quietZone,
+                      col - MlqrCode.quietZone,
+                    )
+                ? 0x000000
+                : 0xffffff,
+      ],
     );
   }
 

@@ -116,12 +116,151 @@ class TransferPackage {
   const TransferPackage({
     required this.chunks,
     required this.jsonLength,
+    required this.cborLength,
     required this.compressedLength,
+    required this.chunkSize,
   });
 
   final List<TransferChunk> chunks;
   final int jsonLength;
+  final int cborLength;
   final int compressedLength;
+  final int chunkSize;
+  int get chunkWireBytes =>
+      chunks.fold(0, (total, chunk) => total + chunk.toBytes().length);
+}
+
+/// Holds validated chunks for one transfer session until the complete payload
+/// is available. The accumulator is intentionally memory-only; callers decide
+/// when the session is discarded.
+class TransferChunkAccumulator {
+  final _chunks = <int, TransferChunk>{};
+  String? _transferId;
+  int? _protocolVersion;
+  int? _total;
+  bool? _encrypted;
+
+  String? get transferId => _transferId;
+  int? get expectedCount => _total;
+  int get receivedCount => _chunks.length;
+  bool get isComplete => _total != null && _chunks.length == _total;
+  List<TransferChunk> get orderedChunks => [
+    for (final index in _chunks.keys.toList()..sort()) _chunks[index]!,
+  ];
+  List<int> get missingIndexes => _total == null
+      ? const []
+      : [
+          for (var index = 0; index < _total!; index++)
+            if (!_chunks.containsKey(index)) index,
+        ];
+
+  /// Adds one complete MLQR payload chunk. Identical duplicates are ignored.
+  bool accept(TransferChunk chunk) {
+    _validateSessionMetadata(chunk);
+    final existing = _chunks[chunk.index];
+    if (existing != null) {
+      if (!_sameChunk(existing, chunk)) {
+        throw const TransferCodecException(
+          'Ein Chunk-Index wurde mit unterschiedlichen Daten empfangen.',
+        );
+      }
+      return false;
+    }
+    _chunks[chunk.index] = chunk;
+    return true;
+  }
+
+  /// Validates the entire decoded MLQR code before changing the accumulator.
+  /// This prevents a later conflict from leaving a partially accepted code.
+  int acceptAll(Iterable<TransferChunk> chunks) {
+    final incoming = chunks.toList();
+    if (incoming.isEmpty) return 0;
+    final transferId = _transferId ?? incoming.first.transferId;
+    final protocolVersion = _protocolVersion ?? incoming.first.protocolVersion;
+    final total = _total ?? incoming.first.total;
+    final encrypted = _encrypted ?? incoming.first.encrypted;
+    final staged = <int, TransferChunk>{};
+    for (final chunk in incoming) {
+      _validateChunkMetadata(
+        chunk,
+        transferId: transferId,
+        protocolVersion: protocolVersion,
+        total: total,
+        encrypted: encrypted,
+      );
+      final existing = _chunks[chunk.index] ?? staged[chunk.index];
+      if (existing != null && !_sameChunk(existing, chunk)) {
+        throw const TransferCodecException(
+          'Ein Chunk-Index wurde mit unterschiedlichen Daten empfangen.',
+        );
+      }
+      staged[chunk.index] = chunk;
+    }
+    _transferId ??= transferId;
+    _protocolVersion ??= protocolVersion;
+    _total ??= total;
+    _encrypted ??= encrypted;
+    var added = 0;
+    for (final entry in staged.entries) {
+      if (!_chunks.containsKey(entry.key)) {
+        _chunks[entry.key] = entry.value;
+        added++;
+      }
+    }
+    return added;
+  }
+
+  void clear() {
+    _chunks.clear();
+    _transferId = null;
+    _protocolVersion = null;
+    _total = null;
+    _encrypted = null;
+  }
+
+  void _validateSessionMetadata(TransferChunk chunk) {
+    if (_transferId == null) {
+      _transferId = chunk.transferId;
+      _protocolVersion = chunk.protocolVersion;
+      _total = chunk.total;
+      _encrypted = chunk.encrypted;
+      return;
+    }
+    _validateChunkMetadata(
+      chunk,
+      transferId: _transferId!,
+      protocolVersion: _protocolVersion!,
+      total: _total!,
+      encrypted: _encrypted!,
+    );
+  }
+
+  void _validateChunkMetadata(
+    TransferChunk chunk, {
+    required String transferId,
+    required int protocolVersion,
+    required int total,
+    required bool encrypted,
+  }) {
+    if (chunk.transferId != transferId ||
+        chunk.protocolVersion != protocolVersion ||
+        chunk.total != total ||
+        chunk.encrypted != encrypted) {
+      throw const TransferCodecException(
+        'Transfer-Chunks passen nicht zur laufenden Sitzung.',
+      );
+    }
+  }
+
+  bool _sameChunk(TransferChunk a, TransferChunk b) =>
+      a.toBytes().length == b.toBytes().length &&
+      _bytesEqual(a.toBytes(), b.toBytes());
+
+  bool _bytesEqual(List<int> a, List<int> b) {
+    var difference = 0;
+    for (var i = 0; i < a.length; i++) difference |= a[i] ^ b[i];
+    return difference == 0;
+  }
 }
 
 class TransferCodec {
@@ -178,7 +317,9 @@ class TransferCodec {
     return TransferPackage(
       chunks: chunks,
       jsonLength: jsonBytes.length,
+      cborLength: cborBytes.length,
       compressedLength: compressed.length,
+      chunkSize: size,
     );
   }
 
@@ -216,7 +357,9 @@ class TransferCodec {
           ),
       ],
       jsonLength: jsonBytes.length,
+      cborLength: cborBytes.length,
       compressedLength: compressed.length,
+      chunkSize: size,
     );
   }
 

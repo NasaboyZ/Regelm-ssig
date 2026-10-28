@@ -5,6 +5,15 @@ import '../models/mlqr_code.dart';
 import '../services/mlqr_encoder_service.dart';
 import '../services/mlqr_transfer_service.dart';
 
+enum TransferDisplayMode { layered, temporal }
+
+class TransferDisplayFrame {
+  const TransferDisplayFrame({required this.raster, required this.mode});
+
+  final MlqrRgbRaster raster;
+  final TransferDisplayMode mode;
+}
+
 /// Preview model or a sequence of real transfer images.
 class TransferSendViewModel {
   TransferSendViewModel.preview({
@@ -21,27 +30,59 @@ class TransferSendViewModel {
            ])
              Uint8List.fromList(utf8.encode(text)),
          ]),
-       ];
+       ] {
+    frames = [
+      TransferDisplayFrame(
+        raster: codes.first.displayRaster,
+        mode: TransferDisplayMode.layered,
+      ),
+    ];
+  }
 
   TransferSendViewModel.sequence(MlqrTransferSequence sequence)
     : codes = sequence.codes,
       isPreview = false,
       transferSequence = sequence,
-      codeInterval = const Duration(milliseconds: 1500);
+      codeInterval = const Duration(seconds: 3) {
+    frames = [
+      for (final code in sequence.codes)
+        TransferDisplayFrame(
+          raster: code.displayRaster,
+          mode: TransferDisplayMode.layered,
+        ),
+      for (final frame in sequence.temporalFrames)
+        TransferDisplayFrame(
+          raster: frame.raster,
+          mode: TransferDisplayMode.temporal,
+        ),
+    ];
+  }
 
   final List<MlqrCode> codes;
+  late final List<TransferDisplayFrame> frames;
   final bool isPreview;
   final MlqrTransferSequence? transferSequence;
   final Duration codeInterval;
   MlqrCode get code => codes.first;
   MlqrCode codeAt(int index) => codes[index];
   int get codeNumber => 1;
-  int get codeCount => codes.length;
+  int get codeCount => frames.length;
   int get chunkCount => transferSequence?.chunkCount ?? codes.length;
   int get maxLayersPerCode =>
       transferSequence?.maxLayersPerCode ?? code.layers.length;
   int get maxQrVersion =>
       transferSequence?.maxQrVersion ?? (code.qrVersion ?? 0);
+  int? get jsonBytes => transferSequence?.package.jsonLength;
+  int? get cborBytes => transferSequence?.package.cborLength;
+  int? get compressedBytes => transferSequence?.package.compressedLength;
+  int? get chunkWireBytes => transferSequence?.package.chunkWireBytes;
+  int? get chunkSize => transferSequence?.package.chunkSize;
+  int get maxPayloadLayersPerCode =>
+      transferSequence?.maxPayloadLayersPerCode ?? code.payloadCount;
+  int get temporalFrameCount => transferSequence?.temporalFrames.length ?? 0;
+  TransferDisplayFrame frameAt(int index) => frames[index];
+  bool isTemporalAt(int index) =>
+      frameAt(index).mode == TransferDisplayMode.temporal;
   int get confirmedCodeCount => 0;
   double get progress => confirmedCodeCount / codeCount;
 }

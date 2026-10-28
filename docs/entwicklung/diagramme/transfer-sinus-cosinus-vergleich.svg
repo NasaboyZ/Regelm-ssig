@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Warum die Kamera den QR-Code manchmal nicht erkennt</title>
+  <desc id="desc">Einfach erklärte Grafik: Der Bildschirm sendet ein Farbsignal, die Kamera misst es. Sinus und Cosinus zeigen ideale Signalverläufe. Licht, Fokus und Rauschen verändern das Kamerasignal so stark, dass der QR-Code nicht mehr eindeutig erkannt wird.</desc>
+  <style>
+    .bg { fill: #fffafc; }
+    .title { fill: #30252d; font: 600 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .subtitle, .axis, .tick, .legend, .note { fill: #6f626b; font: 400 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .label { fill: #30252d; font: 500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .strong { fill: #30252d; font-weight: 600; }
+    .grid { stroke: #eadfe5; stroke-width: 1; }
+    .axis-line { stroke: #8d7b86; stroke-width: 1.5; }
+    .sine { fill: none; stroke: #c24f7b; stroke-width: 4; }
+    .cosine { fill: none; stroke: #8061a3; stroke-width: 4; }
+    .camera { fill: none; stroke: #d48b43; stroke-width: 3; stroke-dasharray: 8 5; }
+    .threshold { stroke: #a43e55; stroke-width: 2; stroke-dasharray: 5 5; }
+    .problem { fill: #f8d9df; opacity: .55; }
+    .ok { fill: #e0f0e5; }
+    .warn { fill: #a43e55; font: 500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .summary { fill: #f8edf3; }
+    .summary-value { fill: #30252d; font: 600 21px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .summary-label { fill: #6f626b; font: 400 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  </style>
+
+  <rect class="bg" width="1400" height="760" rx="18"/>
+  <text class="title" x="42" y="48">Warum die Kamera den QR-Code manchmal nicht erkennt</text>
+  <text class="subtitle" x="42" y="75">Einfach erklärt: Bildschirm-Signal → Kamera-Messung → QR-Code-Erkennung</text>
+
+  <rect class="summary" x="42" y="98" width="1316" height="62" rx="12"/>
+  <text class="summary-value" x="72" y="127">1 · Bildschirm zeigt</text>
+  <text class="summary-label" x="72" y="148">ein klares Farbsignal</text>
+  <text class="summary-value" x="410" y="127">2 · Kamera misst</text>
+  <text class="summary-label" x="410" y="148">Helligkeit und Farbe</text>
+  <text class="summary-value" x="810" y="127">3 · Störungen verändern</text>
+  <text class="summary-label" x="810" y="148">das gemessene Signal</text>
+  <text class="summary-value" x="1160" y="127">4 · Ergebnis</text>
+  <text class="summary-label" x="1160" y="148">QR lesbar oder abgelehnt</text>
+
+  <text class="strong" x="70" y="205">So entsteht das Problem</text>
+  <rect class="problem" x="805" y="240" width="245" height="300" rx="12"/>
+  <rect class="problem" x="1050" y="240" width="180" height="300" rx="12"/>
+  <line class="grid" x1="150" y1="240" x2="1230" y2="240"/>
+  <line class="grid" x1="150" y1="315" x2="1230" y2="315"/>
+  <line class="grid" x1="150" y1="390" x2="1230" y2="390"/>
+  <line class="grid" x1="150" y1="465" x2="1230" y2="465"/>
+  <line class="grid" x1="150" y1="540" x2="1230" y2="540"/>
+  <line class="axis-line" x1="150" y1="390" x2="1230" y2="390"/>
+  <line class="axis-line" x1="150" y1="240" x2="150" y2="540"/>
+  <line class="axis-line" x1="150" y1="540" x2="1230" y2="540"/>
+  <text class="tick" x="138" y="245" text-anchor="end">+1</text>
+  <text class="tick" x="138" y="395" text-anchor="end">0</text>
+  <text class="tick" x="138" y="545" text-anchor="end">−1</text>
+  <text class="axis" x="690" y="580" text-anchor="middle">Zeit bzw. Position im QR-Code</text>
+  <text class="axis" x="62" y="390" transform="rotate(-90 62 390)" text-anchor="middle">gemessene Farb-/Helligkeitsstärke</text>
+
+  <path class="sine" d="M150 390 C190 290 230 290 270 390 S350 490 390 390 S470 290 510 390 S590 490 630 390 S710 290 750 390 S830 490 870 390 S950 290 990 390 S1070 490 1110 390 S1190 290 1230 390"/>
+  <path class="cosine" d="M150 240 C190 240 230 340 270 390 S350 540 390 390 S470 240 510 240 S590 340 630 390 S710 540 750 390 S830 240 870 240 S950 340 990 390 S1070 540 1110 390 S1190 240 1230 240"/>
+  <path class="camera" d="M150 362 C190 286 230 315 270 401 S350 476 390 381 S470 305 510 407 S590 465 630 376 S710 312 750 401 S830 475 870 373 S950 304 990 409 S1070 470 1110 379 S1190 325 1230 401"/>
+  <line class="threshold" x1="805" y1="325" x2="1050" y2="325"/>
+  <line class="threshold" x1="805" y1="455" x2="1050" y2="455"/>
+  <text class="warn" x="820" y="310">noch eindeutig</text>
+  <text class="warn" x="820" y="475">unsicherer Bereich</text>
+  <text class="warn" x="1080" y="290">nicht eindeutig</text>
+  <text class="warn" x="1080" y="308">→ Kamera weiß nicht,</text>
+  <text class="warn" x="1080" y="326">welche Farbe gemeint ist</text>
+
+  <line class="sine" x1="75" y1="635" x2="120" y2="635"/><text class="legend" x="130" y="640">Rosa: ideales Signal 1 (Sinus)</text>
+  <line class="cosine" x1="360" y1="635" x2="405" y2="635"/><text class="legend" x="415" y="640">Violett: ideales Signal 2 (Cosinus)</text>
+  <line class="camera" x1="700" y1="635" x2="745" y2="635"/><text class="legend" x="755" y="640">Orange: was die Kamera tatsächlich misst</text>
+  <line class="threshold" x1="1100" y1="635" x2="1145" y2="635"/><text class="legend" x="1155" y="640">Rote Linie: Erkennungsgrenze</text>
+
+  <rect class="ok" x="70" y="675" width="590" height="46" rx="9"/>
+  <text class="label" x="90" y="697">Im Test:</text><text class="legend" x="170" y="697">Die Signale sind sauber und kontrolliert.</text>
+  <text class="legend" x="90" y="714">Darum konnten die Decoder- und MLQR-Tests erfolgreich lesen.</text>
+  <rect class="problem" x="700" y="675" width="630" height="46" rx="9"/>
+  <text class="label" x="720" y="697">In der Realität:</text><text class="legend" x="840" y="697">Licht, Fokus und Rauschen verformen die Kurve.</text>
+  <text class="legend" x="720" y="714">Dann kann die Kamera den QR-Code sicherheitshalber ablehnen.</text>
+  <text class="note" x="70" y="742">Sinus und Cosinus sind hier nur eine einfache Erklärung für Signalverläufe – keine zusätzlichen Gesundheitsdaten.</text>
+</svg>

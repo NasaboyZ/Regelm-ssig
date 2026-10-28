@@ -51,6 +51,25 @@ MlqrRgbRaster rotate(MlqrRgbRaster image) => MlqrRgbRaster(
   ],
 );
 
+MlqrRgbRaster temporalRaster(QrModuleMatrix matrix) {
+  final size = matrix.size + 8;
+  return MlqrRgbRaster(
+    width: size,
+    height: size,
+    pixels: [
+      for (var row = 0; row < size; row++)
+        for (var col = 0; col < size; col++)
+          row >= 4 &&
+                  row < size - 4 &&
+                  col >= 4 &&
+                  col < size - 4 &&
+                  matrix.isDark(row - 4, col - 4)
+              ? 0x000000
+              : 0xffffff,
+    ],
+  );
+}
+
 void main() {
   const encoder = MlqrEncoderService();
   const decoder = MlqrDecoderService();
@@ -105,6 +124,35 @@ void main() {
       expect(decoded.dummyCount, 2);
     },
   );
+
+  test(
+    'Digital and synthetic camera paths remain complete at seven, nine and fifteen layers',
+    () {
+      for (final count in [7, 9, 15]) {
+        final input = packets(count);
+        final encoded = encoder.encode(input);
+        final digital = decoder.decodeRaster(
+          encoded.raster,
+          opticalLayerCount: encoded.layers.length,
+        );
+        expect(digital.packets, input, reason: 'digital $count layers');
+
+        final camera = decoder.decodeImage(enlarge(encoded.displayRaster));
+        expect(camera.packets, input, reason: 'camera $count layers');
+      }
+    },
+  );
+
+  test('Temporal fallback decodes one complete QR layer', () {
+    final input = packets(3);
+    final encoded = encoder.encode(input);
+    final temporal = temporalRaster(encoded.layers.first.matrix);
+
+    final decoded = decoder.decodeTemporalImage(enlarge(temporal));
+
+    expect(decoded.packets, [input.first]);
+    expect(decoded.opticalLayerCount, 1);
+  });
 
   test(
     'Ordinary QR without reference bar and ambiguous channel values are rejected',

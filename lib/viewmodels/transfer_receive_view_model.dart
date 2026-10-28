@@ -17,10 +17,15 @@ Future<MlqrDecoded?> decodeCameraFrame(MlqrCameraFrame frame) =>
     compute(_decodeFrame, frame);
 
 MlqrDecoded? _decodeFrame(MlqrCameraFrame frame) {
+  final raster = frame.toRaster();
   try {
-    return const MlqrDecoderService().decodeImage(frame.toRaster());
+    return const MlqrDecoderService().decodeImage(raster);
   } on MlqrDecodeException {
-    return null;
+    try {
+      return const MlqrDecoderService().decodeTemporalImage(raster);
+    } on MlqrDecodeException {
+      return null;
+    }
   }
 }
 
@@ -46,14 +51,15 @@ class TransferReceiveViewModel extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
   bool _busy = false;
-  final _chunks = <int, TransferChunk>{};
-  String? _transferId;
-  int? _expectedChunks;
-  int _receivedCodeCount = 0;
+  final _chunks = TransferChunkAccumulator();
+  bool _sessionStarted = false;
   bool initializing = true;
   bool paused = false;
   TransferResult? result;
   CameraController? get camera => _source.controller;
+  int get receivedChunkCount => _chunks.receivedCount;
+  int? get expectedChunkCount => _chunks.expectedCount;
+  List<int> get missingChunkIndexes => _chunks.missingIndexes;
 
   void _notify() {
     if (!_disposed) notifyListeners();
@@ -62,10 +68,10 @@ class TransferReceiveViewModel extends ChangeNotifier {
   void resume() {
     if (_disposed || result != null) return;
     final epoch = ++_epoch;
-    _chunks.clear();
-    _transferId = null;
-    _expectedChunks = null;
-    _receivedCodeCount = 0;
+    if (!_sessionStarted) {
+      _chunks.clear();
+      _sessionStarted = true;
+    }
     paused = false;
     initializing = true;
     _notify();
@@ -84,13 +90,13 @@ class TransferReceiveViewModel extends ChangeNotifier {
           scanTimeout,
           () => _finish(
             TransferFailed(
-              reason: _expectedChunks == null
+              reason: expectedChunkCount == null
                   ? TransferFailureReason.unreadable
                   : TransferFailureReason.incomplete,
-              receivedCodeCount: _expectedChunks == null
+              receivedCodeCount: expectedChunkCount == null
                   ? null
-                  : _chunks.length,
-              expectedCodeCount: _expectedChunks,
+                  : receivedChunkCount,
+              expectedCodeCount: expectedChunkCount,
             ),
             epoch,
           ),
@@ -146,32 +152,17 @@ class TransferReceiveViewModel extends ChangeNotifier {
         );
         return;
       }
-      if (_transferId != null &&
-          (first.transferId != _transferId || first.total != _expectedChunks)) {
-        return;
-      }
-      _transferId = first.transferId;
-      _expectedChunks = first.total;
-      var added = false;
-      for (final chunk in parsed) {
-        if (chunk.transferId != _transferId ||
-            chunk.total != _expectedChunks ||
-            _chunks.containsKey(chunk.index)) {
-          continue;
-        }
-        _chunks[chunk.index] = chunk;
-        added = true;
-      }
-      if (!added || _chunks.length != _expectedChunks || _disposed) return;
-      final incoming = await _transfer.codec.decode(_chunks.values);
+      final added = _chunks.acceptAll(parsed);
+      if (added > 0) _notify();
+      if (!_chunks.isComplete || _disposed) return;
+      final incoming = await _transfer.codec.decode(_chunks.orderedChunks);
       final repository = _repository!;
       await repository.load();
       final merged = _transfer.mergeSnapshots(repository.snapshot, incoming);
       await repository.save(merged);
-      _receivedCodeCount = _chunks.length;
       _finish(
         TransferSucceeded(
-          codeCount: _receivedCodeCount,
+          codeCount: _chunks.receivedCount,
           importedCategories: TransferDataCategory.values.toSet(),
         ),
         epoch,
@@ -192,6 +183,7 @@ class TransferReceiveViewModel extends ChangeNotifier {
     _epoch++;
     _timer?.cancel();
     _stop();
+    _chunks.clear();
     _notify();
   }
 

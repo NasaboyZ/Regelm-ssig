@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1010" role="img" aria-labelledby="title desc">
+  <title id="title">Lineare Ansicht der Datenübertragung</title>
+  <desc id="desc">Die X-Achse zeigt die Übertragungsschritte vom Snapshot bis zum Speichern. Die Y-Achse zeigt den erreichten Datenstatus. Rote Bereiche markieren die aktuellen Probleme bei Kamera, Farberkennung, vollständigem Chunk-Empfang und verschlüsseltem UI-Fluss.</desc>
+  <style>
+    .bg { fill: #fffafc; }
+    .title { fill: #30252d; font: 600 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .subtitle, .axis, .tick, .label, .legend, .note { fill: #6f626b; font: 400 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .label { fill: #30252d; font-weight: 500; }
+    .strong { fill: #30252d; font-weight: 600; }
+    .grid { stroke: #eadfe5; stroke-width: 1; }
+    .axis-line { stroke: #8d7b86; stroke-width: 1.5; }
+    .line { fill: none; stroke: #c24f7b; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .dot { fill: #c24f7b; stroke: #fffafc; stroke-width: 3; }
+    .problem { fill: #f8d9df; opacity: .72; }
+    .problem-line { stroke: #c9566c; stroke-width: 2; stroke-dasharray: 6 5; }
+    .problem-text { fill: #a43e55; font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .ok { fill: #e0f0e5; }
+    .ok-text { fill: #39734a; font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .flow { fill: #f7eef3; stroke: #eadfe5; stroke-width: 1; }
+    .flow-problem { fill: #f8d9df; stroke: #e9abb7; stroke-width: 1; }
+    .arrow { stroke: #8d7b86; stroke-width: 2; marker-end: url(#arrowhead); }
+    .summary { fill: #f8edf3; }
+    .summary-value { fill: #30252d; font: 600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .summary-label { fill: #6f626b; font: 400 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#8d7b86"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1400" height="820" rx="18"/>
+  <text class="title" x="42" y="48">Wie die Transferdaten entstehen</text>
+  <text class="subtitle" x="42" y="75">X-Achse = Verarbeitungsschritt · Y-Achse = erreichter Datenstatus</text>
+
+  <rect class="summary" x="42" y="98" width="1316" height="58" rx="12"/>
+  <text class="summary-value" x="72" y="125">Logik funktioniert</text>
+  <text class="summary-label" x="72" y="145">Serialisierung, Kompression, Chunking und Validierung sind vorhanden.</text>
+  <text class="summary-value" x="530" y="125">Optischer Kanal kritisch</text>
+  <text class="summary-label" x="530" y="145">Kamera, Geometrie und Farbzuordnung können den Frame verwerfen.</text>
+  <text class="summary-value" x="1050" y="125">Produktivfluss offen</text>
+  <text class="summary-label" x="1050" y="145">Verschlüsselter End-to-End-Fluss im UI ist noch nicht fertig.</text>
+
+  <!-- Linear status chart -->
+  <text class="strong" x="70" y="196">1. Statusverlauf über die Transferpipeline</text>
+  <rect class="problem" x="630" y="230" width="240" height="280" rx="10"/>
+  <rect class="problem" x="870" y="230" width="120" height="280" rx="10"/>
+  <rect class="problem" x="1110" y="230" width="120" height="280" rx="10"/>
+
+  <line class="grid" x1="170" y1="250" x2="1230" y2="250"/>
+  <line class="grid" x1="170" y1="315" x2="1230" y2="315"/>
+  <line class="grid" x1="170" y1="380" x2="1230" y2="380"/>
+  <line class="grid" x1="170" y1="445" x2="1230" y2="445"/>
+  <line class="grid" x1="170" y1="510" x2="1230" y2="510"/>
+  <line class="axis-line" x1="170" y1="230" x2="170" y2="530"/>
+  <line class="axis-line" x1="170" y1="530" x2="1230" y2="530"/>
+
+  <text class="tick" x="158" y="255" text-anchor="end">5 gespeichert</text>
+  <text class="tick" x="158" y="320" text-anchor="end">4 validiert</text>
+  <text class="tick" x="158" y="385" text-anchor="end">3 rekonstruiert</text>
+  <text class="tick" x="158" y="450" text-anchor="end">2 empfangen</text>
+  <text class="tick" x="158" y="515" text-anchor="end">1 erzeugt</text>
+  <text class="axis" x="700" y="565" text-anchor="middle">Verarbeitungsschritte (X-Achse)</text>
+  <text class="axis" x="48" y="380" transform="rotate(-90 48 380)" text-anchor="middle">Datenstatus (Y-Achse)</text>
+
+  <polyline class="line" points="220,510 360,510 500,510 640,445 780,380 920,380 1060,315 1200,250"/>
+  <circle class="dot" cx="220" cy="510" r="7"/><circle class="dot" cx="360" cy="510" r="7"/><circle class="dot" cx="500" cy="510" r="7"/>
+  <circle class="dot" cx="640" cy="445" r="7"/><circle class="dot" cx="780" cy="380" r="7"/><circle class="dot" cx="920" cy="380" r="7"/>
+  <circle class="dot" cx="1060" cy="315" r="7"/><circle class="dot" cx="1200" cy="250" r="7"/>
+
+  <text class="label" x="220" y="590" text-anchor="middle">Snapshot</text>
+  <text class="label" x="360" y="590" text-anchor="middle">CBOR + GZIP</text>
+  <text class="label" x="500" y="590" text-anchor="middle">Chunks</text>
+  <text class="label" x="640" y="590" text-anchor="middle">MLQR</text>
+  <text class="label" x="780" y="590" text-anchor="middle">Kamera</text>
+  <text class="label" x="920" y="590" text-anchor="middle">QR-Layer</text>
+  <text class="label" x="1060" y="590" text-anchor="middle">Session</text>
+  <text class="label" x="1200" y="590" text-anchor="middle">Import</text>
+
+  <text class="problem-text" x="750" y="255" text-anchor="middle">HAUPTPROBLEM</text>
+  <text class="problem-text" x="750" y="272" text-anchor="middle">Kamera + Farbe</text>
+  <text class="problem-text" x="930" y="255" text-anchor="middle">Frame kann</text>
+  <text class="problem-text" x="930" y="272" text-anchor="middle">verworfen werden</text>
+  <text class="problem-text" x="1170" y="255" text-anchor="middle">Chunk kann</text>
+  <text class="problem-text" x="1170" y="272" text-anchor="middle">fehlen</text>
+
+  <!-- Flow diagram -->
+  <text class="strong" x="70" y="660">2. Wo die Probleme konkret liegen</text>
+  <rect class="flow" x="55" y="685" width="145" height="68" rx="10"/>
+  <rect class="flow" x="235" y="685" width="145" height="68" rx="10"/>
+  <rect class="flow" x="415" y="685" width="145" height="68" rx="10"/>
+  <rect class="flow-problem" x="595" y="685" width="160" height="68" rx="10"/>
+  <rect class="flow-problem" x="790" y="685" width="160" height="68" rx="10"/>
+  <rect class="flow-problem" x="985" y="685" width="160" height="68" rx="10"/>
+  <rect class="flow" x="1180" y="685" width="165" height="68" rx="10"/>
+
+  <line class="arrow" x1="200" y1="719" x2="232" y2="719"/>
+  <line class="arrow" x1="380" y1="719" x2="412" y2="719"/>
+  <line class="arrow" x1="560" y1="719" x2="592" y2="719"/>
+  <line class="arrow" x1="755" y1="719" x2="787" y2="719"/>
+  <line class="arrow" x1="950" y1="719" x2="982" y2="719"/>
+  <line class="arrow" x1="1145" y1="719" x2="1177" y2="719"/>
+
+  <text class="label" x="127" y="713" text-anchor="middle">Snapshot</text><text class="legend" x="127" y="734" text-anchor="middle">Datenquelle</text>
+  <text class="label" x="307" y="713" text-anchor="middle">Serialisieren</text><text class="legend" x="307" y="734" text-anchor="middle">CBOR / GZIP</text>
+  <text class="label" x="487" y="713" text-anchor="middle">Aufteilen</text><text class="legend" x="487" y="734" text-anchor="middle">Chunks</text>
+  <text class="label" x="675" y="713" text-anchor="middle">MLQR anzeigen</text><text class="problem-text" x="675" y="734" text-anchor="middle">Display / Größe</text>
+  <text class="label" x="870" y="713" text-anchor="middle">Kamera lesen</text><text class="problem-text" x="870" y="734" text-anchor="middle">Fokus / Licht / Winkel</text>
+  <text class="label" x="1065" y="713" text-anchor="middle">Farben → QR</text><text class="problem-text" x="1065" y="734" text-anchor="middle">Ambige RGB-Werte</text>
+  <text class="label" x="1262" y="713" text-anchor="middle">Prüfen + speichern</text><text class="ok-text" x="1262" y="734" text-anchor="middle">Logik vorhanden</text>
+
+  <text class="note" x="55" y="790">Wichtig: Ein roter Bereich bedeutet nicht, dass der Schritt fehlt. Er bedeutet, dass dort die aktuelle Übertragung am häufigsten abbrechen kann.</text>
+
+  <!-- Granular problem map -->
+  <text class="strong" x="55" y="835">3. Granulare Problemstellen im kritischen Bereich</text>
+  <rect class="flow" x="55" y="855" width="1290" height="34" rx="6"/>
+  <text class="strong" x="75" y="877">Teilproblem</text>
+  <text class="strong" x="315" y="877">Was muss funktionieren?</text>
+  <text class="strong" x="680" y="877">Was kann schiefgehen?</text>
+  <text class="strong" x="1110" y="877">Ergebnis</text>
+
+  <rect class="flow-problem" x="55" y="897" width="1290" height="22" rx="4"/>
+  <text class="label" x="75" y="913">1 · Gitter finden</text>
+  <text class="legend" x="315" y="913">QR-Rahmen und Raster lokalisieren</text>
+  <text class="problem-text" x="680" y="913">Code zu klein, schräg, abgeschnitten oder unscharf</text>
+  <text class="problem-text" x="1110" y="913">Kein verwertbares Raster</text>
+
+  <rect class="flow" x="55" y="923" width="1290" height="22" rx="4"/>
+  <text class="label" x="75" y="939">2 · Referenz lesen</text>
+  <text class="legend" x="315" y="939">Schwarz-/Weiß-Referenzen abtasten</text>
+  <text class="problem-text" x="680" y="939">Reflexion, Helligkeit, Display-Artefakte</text>
+  <text class="problem-text" x="1110" y="939">Frame wird verworfen</text>
+
+  <rect class="flow-problem" x="55" y="949" width="1290" height="22" rx="4"/>
+  <text class="label" x="75" y="965">3 · RGB normalisieren</text>
+  <text class="legend" x="315" y="965">Kamerawerte auf Referenzwerte abbilden</text>
+  <text class="problem-text" x="680" y="965">Weißabgleich, Belichtung und Rauschen verändern Werte</text>
+  <text class="problem-text" x="1110" y="965">Farben nicht eindeutig</text>
+
+  <rect class="flow-problem" x="55" y="975" width="1290" height="22" rx="4"/>
+  <text class="label" x="75" y="991">4 · Layer zuordnen</text>
+  <text class="legend" x="315" y="991">RGB-Mix einer optischen Ebene erkennen</text>
+  <text class="problem-text" x="680" y="991">Wert liegt zwischen zwei gültigen Kombinationen</text>
+  <text class="problem-text" x="1110" y="991">MLQR unlesbar</text>
+</svg>

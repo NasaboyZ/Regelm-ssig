@@ -71,8 +71,45 @@ void main() {
         snapshot,
         transferId: 'sized-sequence',
       );
-      expect(sequence.maxQrVersion, lessThanOrEqualTo(20));
-      expect(sequence.codes.every((code) => code.layers.length <= 15), isTrue);
+      expect(sequence.maxQrVersion, lessThanOrEqualTo(10));
+      expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(7));
+      expect(sequence.codes.every((code) => code.payloadCount <= 7), isTrue);
+      expect(sequence.temporalFrames.length, sequence.chunkCount);
+    },
+  );
+
+  test(
+    'one year of repetitive data survives the complete digital sequence',
+    () async {
+      final year = TrackingSnapshot(
+        days: {
+          for (var i = 0; i < 365; i++)
+            DateTime(2026, 1, 1).add(Duration(days: i)): DayEntry(
+              date: DateTime(2026, 1, 1).add(Duration(days: i)),
+              selections: const {
+                'symptoms': {'fatigue'},
+              },
+              note: 'Daily observation',
+            ),
+        },
+      );
+      final sequence = await transfer.encodeDevelopment(
+        year,
+        transferId: 'one-year-sequence',
+      );
+
+      final restored = await transfer.decodeCodesDevelopment(
+        sequence.codes.reversed.toList(),
+      );
+
+      expect(sequence.chunkCount, greaterThan(1));
+      expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(7));
+      expect(sequence.temporalFrames.length, sequence.chunkCount);
+      expect(sequence.package.jsonLength, greaterThan(0));
+      expect(sequence.package.cborLength, greaterThan(0));
+      expect(sequence.package.compressedLength, greaterThan(0));
+      expect(sequence.package.chunkWireBytes, greaterThan(0));
+      expect(restored.toJson(), year.toJson());
     },
   );
 }
