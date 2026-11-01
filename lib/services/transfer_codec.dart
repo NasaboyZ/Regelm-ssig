@@ -38,7 +38,7 @@ class TransferChunk {
         salt.length > 255 ||
         nonce.length > 255 ||
         mac.length > 255) {
-      throw const TransferCodecException('Transfer-Metadaten sind zu gross.');
+      throw const TransferPayloadException('Transfer-Metadaten sind zu gross.');
     }
     final out = BytesBuilder();
     out.add(const [0x52, 0x47, 0x54, 0x31]); // RGT1
@@ -57,14 +57,18 @@ class TransferChunk {
     var offset = 0;
     int takeByte() {
       if (offset >= input.length) {
-        throw const TransferCodecException('Transfer-Chunk ist abgeschnitten.');
+        throw const TransferPayloadException(
+          'Transfer-Chunk ist abgeschnitten.',
+        );
       }
       return input[offset++];
     }
 
     List<int> take(int length) {
       if (length < 0 || offset + length > input.length) {
-        throw const TransferCodecException('Transfer-Chunk ist abgeschnitten.');
+        throw const TransferPayloadException(
+          'Transfer-Chunk ist abgeschnitten.',
+        );
       }
       final result = input.sublist(offset, offset + length);
       offset += length;
@@ -79,13 +83,13 @@ class TransferChunk {
     if (!const [0x52, 0x47, 0x54, 0x31].asMap().keys.every(
       (i) => input.length > i && input[i] == const [0x52, 0x47, 0x54, 0x31][i],
     )) {
-      throw const TransferCodecException('Unbekanntes Transfer-Format.');
+      throw const TransferPayloadException('Unbekanntes Transfer-Format.');
     }
     offset = 4;
     final version = takeByte();
     final encryptedFlag = takeByte();
     if (encryptedFlag > 1) {
-      throw const TransferCodecException(
+      throw const TransferPayloadException(
         'Unbekannter Transfer-Sicherheitsmodus.',
       );
     }
@@ -97,7 +101,7 @@ class TransferChunk {
     final cipherText = Uint8List.fromList(take(takeUint32()));
     final mac = Uint8List.fromList(take(takeByte()));
     if (offset != input.length || id.isEmpty || total < 1 || index >= total) {
-      throw const TransferCodecException('Ungültige Transfer-Metadaten.');
+      throw const TransferPayloadException('Ungültige Transfer-Metadaten.');
     }
     return TransferChunk(
       transferId: id,
@@ -161,7 +165,7 @@ class TransferChunkAccumulator {
     final existing = _chunks[chunk.index];
     if (existing != null) {
       if (!_sameChunk(existing, chunk)) {
-        throw const TransferCodecException(
+        throw const TransferPayloadException(
           'Ein Chunk-Index wurde mit unterschiedlichen Daten empfangen.',
         );
       }
@@ -191,7 +195,7 @@ class TransferChunkAccumulator {
       );
       final existing = _chunks[chunk.index] ?? staged[chunk.index];
       if (existing != null && !_sameChunk(existing, chunk)) {
-        throw const TransferCodecException(
+        throw const TransferPayloadException(
           'Ein Chunk-Index wurde mit unterschiedlichen Daten empfangen.',
         );
       }
@@ -247,7 +251,7 @@ class TransferChunkAccumulator {
         chunk.protocolVersion != protocolVersion ||
         chunk.total != total ||
         chunk.encrypted != encrypted) {
-      throw const TransferCodecException(
+      throw const TransferPayloadException(
         'Transfer-Chunks passen nicht zur laufenden Sitzung.',
       );
     }
@@ -266,8 +270,8 @@ class TransferChunkAccumulator {
   }
 }
 
-class TransferCodec {
-  TransferCodec({this.chunkSize = 1800, Random? random})
+class TrackingSnapshotTransferCodec {
+  TrackingSnapshotTransferCodec({this.chunkSize = 1800, Random? random})
     : _random = random ?? Random.secure();
 
   static const protocolVersion = 1;
@@ -277,7 +281,7 @@ class TransferCodec {
   final Random _random;
   final _cipher = AesGcm.with256bits();
 
-  Future<TransferPackage> encode(
+  Future<TransferPackage> encodeEncryptedSnapshot(
     TrackingSnapshot snapshot, {
     required String passphrase,
     required String transferId,
@@ -326,7 +330,7 @@ class TransferCodec {
     );
   }
 
-  Future<TransferPackage> encodeDevelopment(
+  Future<TransferPackage> encodeUnencryptedSnapshotForDevelopment(
     TrackingSnapshot snapshot, {
     required String transferId,
     int? chunkSize,
@@ -366,18 +370,18 @@ class TransferCodec {
     );
   }
 
-  Future<TrackingSnapshot> decode(
+  Future<TrackingSnapshot> decodeSnapshot(
     Iterable<TransferChunk> input, {
     String? passphrase,
   }) async {
     final chunks = input.toList();
     if (chunks.isEmpty) {
-      throw const TransferCodecException('Transfer ist leer.');
+      throw const TransferPayloadException('Transfer ist leer.');
     }
     final first = chunks.first;
     if (first.protocolVersion != protocolVersion ||
         chunks.length != first.total) {
-      throw const TransferCodecException(
+      throw const TransferPayloadException(
         'Transfer ist unvollständig oder inkompatibel.',
       );
     }
@@ -392,7 +396,7 @@ class TransferCodec {
           !_same(chunk.salt, first.salt) ||
           !_same(chunk.nonce, first.nonce) ||
           !_same(chunk.mac, first.mac)) {
-        throw const TransferCodecException(
+        throw const TransferPayloadException(
           'Transfer-Chunks passen nicht zusammen.',
         );
       }
@@ -403,7 +407,9 @@ class TransferCodec {
     final List<int> clear;
     if (first.encrypted) {
       if (passphrase == null || passphrase.isEmpty) {
-        throw const TransferCodecException('Eine Passphrase ist erforderlich.');
+        throw const TransferPayloadException(
+          'Eine Passphrase ist erforderlich.',
+        );
       }
       try {
         final key = await _deriveKey(passphrase, first.salt);
@@ -413,7 +419,7 @@ class TransferCodec {
           aad: _aad(first.transferId),
         );
       } catch (_) {
-        throw const TransferCodecException(
+        throw const TransferPayloadException(
           'Transfer konnte nicht entschlüsselt werden.',
         );
       }
@@ -424,12 +430,12 @@ class TransferCodec {
       final cborBytes = GZipCodec().decode(clear);
       final object = cbor.decode(cborBytes);
       if (object is! Map) {
-        throw const TransferCodecException('CBOR-Payload ist kein Snapshot.');
+        throw const TransferPayloadException('CBOR-Payload ist kein Snapshot.');
       }
       return TrackingSnapshot.fromJson(_mapWithStringKeys(object));
     } catch (error) {
-      if (error is TransferCodecException) rethrow;
-      throw TransferCodecException('Transfer-Payload ist beschädigt: $error');
+      if (error is TransferPayloadException) rethrow;
+      throw TransferPayloadException('Transfer-Payload ist beschädigt: $error');
     }
   }
 
@@ -493,8 +499,8 @@ void _addUint32(BytesBuilder builder, int value) {
   ]);
 }
 
-class TransferCodecException implements Exception {
-  const TransferCodecException(this.message);
+class TransferPayloadException implements Exception {
+  const TransferPayloadException(this.message);
   final String message;
   @override
   String toString() => message;

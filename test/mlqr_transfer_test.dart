@@ -9,7 +9,7 @@ void main() {
   final transfer = MlqrTransferService(
     encoder: const MlqrEncoderService(),
     decoder: const MlqrDecoderService(),
-    codec: TransferCodec(),
+    payloadCodec: TrackingSnapshotTransferCodec(),
   );
 
   final snapshot = TrackingSnapshot(
@@ -25,7 +25,7 @@ void main() {
   test(
     'groups transfer chunks into a sequence of MLQR codes and restores data',
     () async {
-      final sequence = await transfer.encode(
+      final sequence = await transfer.encodeEncryptedSnapshot(
         snapshot,
         passphrase: 'secret',
         transferId: 'sequence-1',
@@ -33,7 +33,7 @@ void main() {
       );
 
       expect(sequence.codes.length, greaterThan(1));
-      final decoded = await transfer.decodeCodes(
+      final decoded = await transfer.decodeSnapshotFromMlqrCodes(
         sequence.codes.reversed.toList(),
         passphrase: 'secret',
       );
@@ -44,7 +44,7 @@ void main() {
   test(
     'every generated MLQR code stays within the fifteen-layer limit',
     () async {
-      final sequence = await transfer.encode(
+      final sequence = await transfer.encodeEncryptedSnapshot(
         snapshot,
         passphrase: 'secret',
         transferId: 'sequence-2',
@@ -55,19 +55,20 @@ void main() {
   );
 
   test('development sequence decodes without a passphrase', () async {
-    final sequence = await transfer.encodeDevelopment(
+    final sequence = await transfer.encodeUnencryptedSnapshotForDevelopment(
       snapshot,
       transferId: 'development-sequence',
       chunkSize: 5,
     );
-    final decoded = await transfer.decodeCodesDevelopment(sequence.codes);
+    final decoded = await transfer
+        .decodeUnencryptedSnapshotFromMlqrCodesForDevelopment(sequence.codes);
     expect(decoded.toJson(), snapshot.toJson());
   });
 
   test(
     'default development sizing keeps QR versions camera-friendly',
     () async {
-      final sequence = await transfer.encodeDevelopment(
+      final sequence = await transfer.encodeUnencryptedSnapshotForDevelopment(
         snapshot,
         transferId: 'sized-sequence',
       );
@@ -93,14 +94,15 @@ void main() {
             ),
         },
       );
-      final sequence = await transfer.encodeDevelopment(
+      final sequence = await transfer.encodeUnencryptedSnapshotForDevelopment(
         year,
         transferId: 'one-year-sequence',
       );
 
-      final restored = await transfer.decodeCodesDevelopment(
-        sequence.codes.reversed.toList(),
-      );
+      final restored = await transfer
+          .decodeUnencryptedSnapshotFromMlqrCodesForDevelopment(
+            sequence.codes.reversed.toList(),
+          );
 
       expect(sequence.chunkCount, greaterThan(1));
       expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(7));

@@ -140,38 +140,6 @@ class _TransferSendViewState extends State<TransferSendView> {
                   label: '${_index + 1} / ${viewModel.codeCount}',
                 ),
                 const SizedBox(height: 24),
-                LinearProgressIndicator(
-                  value: viewModel.progress,
-                  minHeight: 10,
-                  borderRadius: BorderRadius.circular(20),
-                  color: AppColors.burntOrange,
-                  backgroundColor: const Color(0xFFF0E0D8),
-                  semanticsLabel:
-                      'Bestätigte QR-Codes: ${viewModel.confirmedCodeCount} '
-                      'von ${viewModel.codeCount}',
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.radio_button_unchecked,
-                      color: AppColors.muted,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        viewModel.isPreview
-                            ? '${viewModel.confirmedCodeCount} Codes bestätigt · Testvorschau'
-                            : '${viewModel.confirmedCodeCount} Codes bestätigt · ohne Passphrase',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
                 const _PositionHint(),
                 const SizedBox(height: 24),

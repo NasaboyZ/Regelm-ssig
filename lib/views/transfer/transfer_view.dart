@@ -36,10 +36,11 @@ class TransferView extends StatelessWidget {
       return;
     }
     await repository.load();
-    final sequence = await MlqrTransferService().encodeDevelopment(
-      repository.snapshot,
-      transferId: 'transfer-${DateTime.now().microsecondsSinceEpoch}',
-    );
+    final sequence = await MlqrTransferService()
+        .encodeUnencryptedSnapshotForDevelopment(
+          repository.snapshot,
+          transferId: 'transfer-${DateTime.now().microsecondsSinceEpoch}',
+        );
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(

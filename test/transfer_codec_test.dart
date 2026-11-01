@@ -5,7 +5,7 @@ import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/services/transfer_codec.dart';
 
 void main() {
-  final codec = TransferCodec();
+  final codec = TrackingSnapshotTransferCodec();
 
   TrackingSnapshot snapshot() => TrackingSnapshot(
     categories: const {'mood': 'Stimmung'},
@@ -24,7 +24,7 @@ void main() {
   test(
     'snapshot round-trips through CBOR, GZIP, encryption and chunks',
     () async {
-      final transfer = await codec.encode(
+      final transfer = await codec.encodeEncryptedSnapshot(
         snapshot(),
         passphrase: 'correct horse battery staple',
         transferId: 'transfer-1',
@@ -41,7 +41,7 @@ void main() {
         orderedEquals(List.generate(transfer.chunks.length, (index) => index)),
       );
 
-      final restored = await codec.decode(
+      final restored = await codec.decodeSnapshot(
         transfer.chunks.reversed.toList(),
         passphrase: 'correct horse battery staple',
       );
@@ -50,18 +50,18 @@ void main() {
   );
 
   test('development mode round-trips without a passphrase', () async {
-    final transfer = await codec.encodeDevelopment(
+    final transfer = await codec.encodeUnencryptedSnapshotForDevelopment(
       snapshot(),
       transferId: 'development-transfer',
       chunkSize: 20,
     );
     expect(transfer.chunks.every((chunk) => !chunk.encrypted), isTrue);
-    final restored = await codec.decode(transfer.chunks);
+    final restored = await codec.decodeSnapshot(transfer.chunks);
     expect(restored.toJson(), snapshot().toJson());
   });
 
   test('wrong passphrase and missing chunks are rejected', () async {
-    final transfer = await codec.encode(
+    final transfer = await codec.encodeEncryptedSnapshot(
       snapshot(),
       passphrase: 'secret',
       transferId: 'transfer-2',
@@ -69,15 +69,15 @@ void main() {
     );
 
     expect(
-      () => codec.decode(transfer.chunks, passphrase: 'wrong'),
-      throwsA(isA<TransferCodecException>()),
+      () => codec.decodeSnapshot(transfer.chunks, passphrase: 'wrong'),
+      throwsA(isA<TransferPayloadException>()),
     );
     expect(
-      () => codec.decode(
+      () => codec.decodeSnapshot(
         transfer.chunks.sublist(0, transfer.chunks.length - 1),
         passphrase: 'secret',
       ),
-      throwsA(isA<TransferCodecException>()),
+      throwsA(isA<TransferPayloadException>()),
     );
   });
 
@@ -96,7 +96,7 @@ void main() {
             ),
         },
       );
-      final transfer = await codec.encode(
+      final transfer = await codec.encodeEncryptedSnapshot(
         repetitive,
         passphrase: 'secret',
         transferId: 'measure',
@@ -107,13 +107,13 @@ void main() {
   );
 
   test('chunk metadata cannot be mixed between transfers', () async {
-    final first = await codec.encode(
+    final first = await codec.encodeEncryptedSnapshot(
       snapshot(),
       passphrase: 'secret',
       transferId: 'a',
       chunkSize: 20,
     );
-    final second = await codec.encode(
+    final second = await codec.encodeEncryptedSnapshot(
       snapshot(),
       passphrase: 'secret',
       transferId: 'b',
@@ -121,13 +121,13 @@ void main() {
     );
     final mixed = <TransferChunk>[first.chunks.first, second.chunks.last];
     expect(
-      () => codec.decode(mixed, passphrase: 'secret'),
-      throwsA(isA<TransferCodecException>()),
+      () => codec.decodeSnapshot(mixed, passphrase: 'secret'),
+      throwsA(isA<TransferPayloadException>()),
     );
   });
 
   test('chunk accumulator is order-independent and idempotent', () async {
-    final transfer = await codec.encodeDevelopment(
+    final transfer = await codec.encodeUnencryptedSnapshotForDevelopment(
       snapshot(),
       transferId: 'accumulator',
       chunkSize: 20,
@@ -148,7 +148,7 @@ void main() {
   });
 
   test('chunk accumulator reports missing chunks without completing', () async {
-    final transfer = await codec.encodeDevelopment(
+    final transfer = await codec.encodeUnencryptedSnapshotForDevelopment(
       snapshot(),
       transferId: 'missing',
       chunkSize: 20,
@@ -163,7 +163,7 @@ void main() {
   });
 
   test('chunk accumulator rejects conflicting duplicate indices', () async {
-    final transfer = await codec.encodeDevelopment(
+    final transfer = await codec.encodeUnencryptedSnapshotForDevelopment(
       snapshot(),
       transferId: 'conflict',
       chunkSize: 20,
@@ -185,7 +185,7 @@ void main() {
 
     expect(
       () => accumulator.accept(conflicting),
-      throwsA(isA<TransferCodecException>()),
+      throwsA(isA<TransferPayloadException>()),
     );
     expect(accumulator.receivedCount, 1);
   });
