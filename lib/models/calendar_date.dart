@@ -11,7 +11,8 @@ String dayKey(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 DateTime parseCalendarDate(String value) {
   final result = DateTime.parse(value);
-  if (dayKey(result) != value)
+  if (dayKey(result) != value) {
     throw const FormatException('Invalid calendar date');
+  }
   return localDay(result);
 }

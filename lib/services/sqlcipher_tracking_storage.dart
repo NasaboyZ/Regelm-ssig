@@ -234,8 +234,9 @@ class SqlCipherTrackingStorage implements TrackingStorage {
         } else if (table == 'period_entries') {
           periods.add(PeriodEntry.fromJson(json));
         } else if (table == 'tracking_settings') {
-          if (row['id'] != 1)
+          if (row['id'] != 1) {
             throw const FormatException('Invalid settings record');
+          }
           consent = ForecastConsent.values.byName(
             json['forecastConsent'] as String,
           );
@@ -249,8 +250,9 @@ class SqlCipherTrackingStorage implements TrackingStorage {
         }
       }
     }
-    if (validatePeriods(periods) != null)
+    if (validatePeriods(periods) != null) {
       throw const FormatException('Invalid period records');
+    }
     return TrackingSnapshot(
       days: days,
       categories: categories,
@@ -263,8 +265,9 @@ class SqlCipherTrackingStorage implements TrackingStorage {
     TrackingSnapshot snapshot,
     TrackingPayloadCipher cipher,
   ) async {
-    if (validatePeriods(snapshot.periods) != null)
+    if (validatePeriods(snapshot.periods) != null) {
       throw const FormatException('Invalid period records');
+    }
     final values = <String, List<Map<String, dynamic>>>{
       'period_entries': snapshot.periods.map((p) => p.toJson()).toList(),
       'tracking_settings': [

@@ -7,14 +7,13 @@ class CycleHistoryViewModel extends CycleViewModel {
   CycleHistoryViewModel({
     super.repository,
     super.calculator,
-    DateTime Function()? clock,
+    super.clock,
     Set<DateTime> periodDays = const {},
     Set<DateTime> predictedDays = const {},
     Set<DateTime> entryDays = const {},
   }) : _periodDays = Set.unmodifiable(periodDays.map(_date)),
        _predictedDays = Set.unmodifiable(predictedDays.map(_date)),
-       _entryDays = Set.unmodifiable(entryDays.map(_date)),
-       super(clock: clock) {
+       _entryDays = Set.unmodifiable(entryDays.map(_date)) {
     final now = today;
     _month = DateTime(now.year, now.month);
   }

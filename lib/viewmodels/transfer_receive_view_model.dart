@@ -38,12 +38,11 @@ class TransferReceiveViewModel extends ChangeNotifier {
   TransferReceiveViewModel({
     MlqrCameraSource? source,
     Future<MlqrDecoded?> Function(MlqrCameraFrame)? decode,
-    TrackingRepository? repository,
+    this._repository,
     MlqrTransferService? transfer,
     this.scanTimeout = const Duration(hours: 45),
   }) : _source = source ?? DeviceMlqrCameraSource(),
        _decode = decode ?? decodeCameraFrame,
-       _repository = repository,
        _transfer = transfer ?? MlqrTransferService();
 
   final MlqrCameraSource _source;

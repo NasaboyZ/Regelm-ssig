@@ -48,7 +48,9 @@ class CycleViewModel extends ChangeNotifier {
       await repository?.load();
       refresh();
     } catch (_) {
-      if (!_disposed) error = 'Deine Einträge konnten nicht geladen werden.';
+      if (!_disposed) {
+        error = 'Deine Einträge konnten nicht geladen werden.';
+      }
     } finally {
       if (!_disposed) {
         isLoading = false;
@@ -68,8 +70,9 @@ class CycleViewModel extends ChangeNotifier {
         repository!.snapshot.copyWith(forecastConsent: value),
       );
     } catch (_) {
-      if (!_disposed)
+      if (!_disposed) {
         consentError = 'Speichern fehlgeschlagen. Bitte versuche es erneut.';
+      }
     } finally {
       if (!_disposed) {
         isSavingConsent = false;

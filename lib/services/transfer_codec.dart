@@ -56,8 +56,9 @@ class TransferChunk {
     final input = Uint8List.fromList(bytes);
     var offset = 0;
     int takeByte() {
-      if (offset >= input.length)
+      if (offset >= input.length) {
         throw const TransferCodecException('Transfer-Chunk ist abgeschnitten.');
+      }
       return input[offset++];
     }
 
@@ -258,7 +259,9 @@ class TransferChunkAccumulator {
 
   bool _bytesEqual(List<int> a, List<int> b) {
     var difference = 0;
-    for (var i = 0; i < a.length; i++) difference |= a[i] ^ b[i];
+    for (var i = 0; i < a.length; i++) {
+      difference |= a[i] ^ b[i];
+    }
     return difference == 0;
   }
 }
@@ -368,8 +371,9 @@ class TransferCodec {
     String? passphrase,
   }) async {
     final chunks = input.toList();
-    if (chunks.isEmpty)
+    if (chunks.isEmpty) {
       throw const TransferCodecException('Transfer ist leer.');
+    }
     final first = chunks.first;
     if (first.protocolVersion != protocolVersion ||
         chunks.length != first.total) {
@@ -419,8 +423,9 @@ class TransferCodec {
     try {
       final cborBytes = GZipCodec().decode(clear);
       final object = cbor.decode(cborBytes);
-      if (object is! Map)
+      if (object is! Map) {
         throw const TransferCodecException('CBOR-Payload ist kein Snapshot.');
+      }
       return TrackingSnapshot.fromJson(_mapWithStringKeys(object));
     } catch (error) {
       if (error is TransferCodecException) rethrow;
@@ -461,7 +466,9 @@ class TransferCodec {
       a.length == b.length && _bytesEqual(a, b);
   bool _bytesEqual(List<int> a, List<int> b) {
     var difference = 0;
-    for (var i = 0; i < a.length; i++) difference |= a[i] ^ b[i];
+    for (var i = 0; i < a.length; i++) {
+      difference |= a[i] ^ b[i];
+    }
     return difference == 0;
   }
 }
