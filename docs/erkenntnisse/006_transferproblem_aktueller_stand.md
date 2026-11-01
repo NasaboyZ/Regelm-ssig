@@ -1,8 +1,18 @@
-# Bericht: Warum der Datentransfer aktuell noch nicht zuverlässig funktioniert
+# Bericht: Diagnose und Lösung des MLQR-Datentransferproblems
 
 **Stand:** 25. Oktober 2026  
 **Bereich:** Optischer Datentransfer zwischen zwei mobilen Geräten  
 **Projekt:** Regelmässig
+
+> **Aktualisierung nach Commit `faaaf05fef2db990a32615d1bb74b6f747723ad5`**
+>
+> Die im ursprünglichen Bericht beschriebene Ursache wurde durch eine
+> Kombination aus dreifacher temporaler Wiederholung, fortschrittsbasiertem
+> Timeout, adaptiver Bildauswertung sowie Fokus- und Zoomsteuerung entschärft.
+> Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
+> Geräten ist damit erfolgreich möglich. Der historische Diagnosebericht
+> bleibt unten erhalten; Aussagen über einen noch offenen Hardwaretest sind
+> als früherer Zwischenstand zu verstehen.
 
 ## Kurzfassung
 
@@ -97,7 +107,7 @@ Beleg:
 
 - `lib/viewmodels/transfer_receive_view_model.dart`, Methode `_acceptTransferCode`
 
-## 3. Das konkrete aktuelle Problem
+## 3. Das konkrete Problem im ursprünglichen Stand
 
 ### 3.1 Der kritische Kanal ist die Kameraauswertung
 
@@ -220,7 +230,7 @@ Belege:
 - `lib/services/mlqr_transfer_service.dart`, Methoden `encode` und `encodeDevelopment`
 - `lib/viewmodels/transfer_receive_view_model.dart`: verschlüsselte Chunks werden derzeit mit `verificationFailed` abgelehnt, weil die Empfangsansicht noch keine Passphrase verarbeitet.
 
-## 5. Aktueller Reifegrad
+## 5. Reifegrad im ursprünglichen Diagnosezeitpunkt
 
 | Bereich | Status | Einschätzung |
 | --- | --- | --- |
@@ -230,12 +240,15 @@ Belege:
 | Verschlüsselter Codec | technisch vorhanden | Empfangs-UI nutzt ihn noch nicht vollständig |
 | MLQR-Erzeugung aus Test-/Snapshotdaten | vorhanden | Raster- und Service-Tests vorhanden |
 | Temporaler QR-Fallback | vorhanden | Decoder und Frame-Erzeugung vorhanden |
-| Kamera-Lokalisierung | vorhanden, aber empfindlich | reale Bedingungen noch nicht ausreichend validiert |
-| Farbkalibrierung unter realem Licht | offen | Hauptforschungsproblem |
-| Mehrere echte Geräte | nicht nachgewiesen | iPhone↔Samsung-Ende-zu-Ende-Test offen |
+| Kamera-Lokalisierung | vorhanden und robuster | Crop-/Vollbild-Fallback sowie Fokus- und Zoomsteuerung vorhanden |
+| Farbkalibrierung unter realem Licht | verbessert | adaptive Kontrastauswertung; weitere Gerätemessungen bleiben sinnvoll |
+| Mehrere echte Geräte | erfolgreich nachgewiesen | Jahresbestand zwischen physischen Geräten übertragen |
 | Vollständiger verschlüsselter Produktivtransfer | offen | Passphrase-Fluss und UI fehlen beziehungsweise sind nicht fertig integriert |
 
-Das Planungsdokument markiert den echten Kamera-Scan des farbigen Codes ausdrücklich als anspruchsvollsten offenen Teil und führt den vollständigen iPhone↔Samsung-Test noch als offene Aufgabe.
+Das Planungsdokument dokumentiert an dieser Stelle den damaligen offenen
+Arbeitsstand. Nach dem genannten Commit ist der physische Jahresdatentransfer
+erfolgreich möglich; offen bleibt die systematische Messung über viele
+Geräte-, Licht- und Abstandskombinationen.
 
 Beleg:
 
@@ -283,13 +296,29 @@ Die Sinus- und Cosinuskurven zeigen diese ideale Trennung nur als vereinfachtes 
 
 ### Bezug zu unseren Tests
 
-Die bestandenen Decoder- und MLQR-Tests prüfen überwiegend kontrollierte Eingaben: erzeugte Raster, vergrößerte Bilder, definierte Farbveränderungen, Rotationen und absichtlich beschädigte Daten. Sie zeigen, dass die digitale Logik unter diesen Bedingungen korrekt arbeitet.
+Die bestandenen Decoder- und MLQR-Tests prüfen überwiegend kontrollierte Eingaben: erzeugte Raster, vergrößerte Bilder, definierte Farbveränderungen, Rotationen und absichtlich beschädigte Daten. Sie zeigen, dass die digitale Logik unter diesen Bedingungen korrekt arbeitet. Der erfolgreiche Hardwaretest ergänzt diesen Nachweis um einen realen Gerätetransfer, ersetzt aber noch keine statistische Messreihe.
 
-Der Begriff „ideal“ beschreibt deshalb den Testbereich, nicht die reale Übertragung zwischen zwei Geräten. Für den noch offenen Praxisvergleich brauchen wir zusätzliche Messungen mit echten Displays, echter Kamera, wechselndem Licht, verschiedenen Abständen und unterschiedlichen Winkeln.
+Der Begriff „ideal“ beschreibt deshalb den kontrollierten Testbereich, nicht
+die typische Varianz aller realen Übertragungen. Für eine quantitative
+Bewertung wären zusätzliche Messungen mit echten Displays, echter Kamera,
+wechselndem Licht, verschiedenen Abständen und unterschiedlichen Winkeln
+sinnvoll.
 
 ## 6. Wahrscheinliche Fehlerbilder und ihre Bedeutung
 
 ## 6a. Lineare Ansicht des Datenflusses
+
+Die Ursache und die Lösung lassen sich für die technische Dokumentation am
+verständlichsten als Vorher-Nachher-Zeitachse mit getrennten Spuren für Sender,
+optischen Kanal, Empfänger und Transfersession lesen:
+
+![Vom unzuverlässigen zum robusten physischen MLQR-Datentransfer](../entwicklung/diagramme/transfer-problem-loesung-zeitachse.svg)
+
+**Abbildung:** Die rote Hälfte zeigt, warum ein einzelner verlorener Frame oder
+ein ambiger Kamerawert früher zu einer unvollständigen Session führen konnte.
+Die grüne Hälfte zeigt die im Commit eingeführten Gegenmassnahmen. Die Grafik
+stellt bewusst keine gemessene Erfolgswahrscheinlichkeit dar, sondern eine
+kausale technische Erklärung des Fehlerpfads und der implementierten Lösung.
 
 Die folgende Grafik zeigt den Ablauf auf zwei Ebenen:
 
@@ -308,7 +337,7 @@ Die Y-Achse ist dabei keine einzelne Gesundheitsmessung und auch keine mathemati
 2. **Farberkennung:** Licht, Display, Weißabgleich und Belichtung verändern die RGB-Werte. Dann ist die Zuordnung zu den MLQR-Layern nicht eindeutig.
 3. **QR-Rekonstruktion:** Wenn nur ein Layer fehlschlägt, wird der gesamte MLQR-Durchlauf verworfen.
 4. **Mehrere Chunks:** Ein übersehener Frame führt dazu, dass die Transfersession unvollständig bleibt.
-5. **Verschlüsselter Produktivfluss:** Der Codec ist vorhanden, aber die Empfangs-UI verarbeitet den Passphrase-Fluss noch nicht vollständig.
+5. **Verschlüsselter Produktivfluss:** Der Codec ist vorhanden, aber die Empfangs-UI verarbeitet den Passphrase-Fluss noch nicht vollständig. Dieser Punkt ist von der erfolgreichen technischen Jahresdatenübertragung im Entwicklungspfad getrennt.
 
 ### Noch granularer: Fehler innerhalb des Kamera-Frames
 
@@ -353,7 +382,7 @@ Wahrscheinliche Ursachen:
 - einzelne Codes oder Chunks wurden nicht gelesen
 - Anzeigeintervall ist zu kurz
 - Empfänger verliert beim Wechsel zwischen Frames den Fokus
-- die Session enthält mehr Chunks, als innerhalb des Timeouts gelesen werden konnten
+- die Session enthält mehr Chunks, als innerhalb des damaligen Timeouts gelesen werden konnten; im aktuellen Stand wird der Timeout bei Fortschritt zurückgesetzt
 
 ### Fehlerbild E: `verificationFailed`
 

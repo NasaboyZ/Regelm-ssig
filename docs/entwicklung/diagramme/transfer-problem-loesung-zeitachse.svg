@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Vom unzuverlässigen zum robusten physischen MLQR-Datentransfer</title>
+  <desc id="desc">Vorher-Nachher-Swimlane-Zeitachse: Vorher konnte ein einzelner verlorener Kameraframe wegen starrer Zeitüberschreitung, empfindlicher Bildauswertung und fehlender Kamerasteuerung den Jahresdatentransfer unvollständig machen. Nachher wiederholt der Sender temporale QR-Sequenzen dreimal, der Empfänger setzt den Timeout bei Fortschritt zurück, wertet Bildausschnitte adaptiv aus und unterstützt Fokus und Zoom. Dadurch kann der vollständige Transfer validiert und importiert werden.</desc>
+  <style>
+    .bg { fill: #fffafc; }
+    .title { fill: #30252d; font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .subtitle { fill: #6f626b; font: 400 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .section { fill: #30252d; font: 700 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .lane { fill: #6f626b; font: 600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .label { fill: #30252d; font: 600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .body { fill: #50454d; font: 400 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .small { fill: #6f626b; font: 400 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .axis { fill: #6f626b; font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .problem-head { fill: #8f304e; font: 700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .solution-head { fill: #28623b; font: 700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .problem { fill: #f9dfe5; stroke: #d9899d; stroke-width: 1.5; }
+    .problem-soft { fill: #fff0f3; stroke: #e5b2bf; stroke-width: 1.5; }
+    .solution { fill: #e3f1e6; stroke: #86b596; stroke-width: 1.5; }
+    .solution-soft { fill: #f1f8f2; stroke: #afd0b8; stroke-width: 1.5; }
+    .neutral { fill: #f7eef3; stroke: #dfd0d9; stroke-width: 1.5; }
+    .divider { stroke: #8d7b86; stroke-width: 2; stroke-dasharray: 8 7; }
+    .grid { stroke: #eadfe5; stroke-width: 1; }
+    .arrow { stroke: #8d7b86; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+    .arrow-problem { stroke: #b34b68; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead-problem); }
+    .arrow-solution { stroke: #39734a; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead-solution); }
+    .number-problem { fill: #b34b68; }
+    .number-solution { fill: #39734a; }
+    .number-text { fill: #ffffff; font: 700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .callout { fill: #fff7e8; stroke: #d9ad68; stroke-width: 1.5; }
+    .callout-text { fill: #765321; font: 600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .result { fill: #dcefe1; stroke: #579568; stroke-width: 2; }
+    .result-text { fill: #28623b; font: 700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .legend-line { stroke-width: 4; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#8d7b86"/>
+    </marker>
+    <marker id="arrowhead-problem" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#b34b68"/>
+    </marker>
+    <marker id="arrowhead-solution" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#39734a"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1040" rx="18"/>
+  <text class="title" x="48" y="52">Vom Transferproblem zur robusten Lösung</text>
+  <text class="subtitle" x="48" y="80">Swimlane-Zeitachse für die Übertragung eines Jahresbestands zwischen zwei physischen Geräten</text>
+
+  <rect class="problem-soft" x="48" y="108" width="730" height="64" rx="12"/>
+  <text class="problem-head" x="72" y="137">VORHER · einzelner Fehler stoppt die Session</text>
+  <text class="body" x="72" y="158">Ein verlorener Frame oder ein ambiger Farbwert kann einen Chunk fehlen lassen.</text>
+  <rect class="solution-soft" x="822" y="108" width="730" height="64" rx="12"/>
+  <text class="solution-head" x="846" y="137">NACHHER · Fortschritt und Wiederholung sichern die Session</text>
+  <text class="body" x="846" y="158">Mehrere Fallbacks ermöglichen das Nachholen, ohne Daten doppelt zu importieren.</text>
+
+  <line class="divider" x1="800" y1="104" x2="800" y2="925"/>
+  <text class="axis" x="48" y="205">Zeit / Verarbeitungsschritt</text>
+  <text class="axis" x="1552" y="205" text-anchor="end">vollständiger Import</text>
+  <line class="grid" x1="170" y1="222" x2="1510" y2="222"/>
+  <line class="grid" x1="170" y1="350" x2="1510" y2="350"/>
+  <line class="grid" x1="170" y1="478" x2="1510" y2="478"/>
+  <line class="grid" x1="170" y1="606" x2="1510" y2="606"/>
+  <line class="grid" x1="170" y1="734" x2="1510" y2="734"/>
+  <line class="grid" x1="170" y1="862" x2="1510" y2="862"/>
+
+  <text class="lane" x="52" y="273">SENDER</text>
+  <text class="lane" x="52" y="401">OPTISCHER KANAL</text>
+  <text class="lane" x="52" y="529">EMPFÄNGER</text>
+  <text class="lane" x="52" y="657">SESSION</text>
+  <text class="lane" x="52" y="785">ERGEBNIS</text>
+
+  <!-- Before -->
+  <rect class="neutral" x="180" y="235" width="170" height="72" rx="10"/>
+  <text class="label" x="265" y="260" text-anchor="middle">Temporale Frames</text>
+  <text class="body" x="265" y="280" text-anchor="middle">jeweils einmal</text>
+  <path class="arrow" d="M350 271 H390"/>
+  <rect class="problem" x="400" y="235" width="180" height="72" rx="10"/>
+  <text class="label" x="490" y="260" text-anchor="middle">Frame übersprungen</text>
+  <text class="body" x="490" y="280" text-anchor="middle">Chunk bleibt unsichtbar</text>
+  <path class="arrow-problem" d="M580 271 H620"/>
+  <rect class="problem" x="630" y="235" width="125" height="72" rx="10"/>
+  <text class="label" x="692" y="260" text-anchor="middle">Sequenz</text>
+  <text class="body" x="692" y="280" text-anchor="middle">unvollständig</text>
+
+  <!-- After -->
+  <rect class="solution" x="830" y="235" width="180" height="72" rx="10"/>
+  <circle class="number-solution" cx="850" cy="255" r="13"/><text class="number-text" x="850" y="259" text-anchor="middle">1</text>
+  <text class="label" x="930" y="260" text-anchor="middle">Temporale Frames</text>
+  <text class="body" x="930" y="280" text-anchor="middle">drei vollständige Runden</text>
+  <path class="arrow-solution" d="M1010 271 H1050"/>
+  <rect class="solution" x="1060" y="235" width="190" height="72" rx="10"/>
+  <text class="label" x="1155" y="260" text-anchor="middle">Verlorener Frame</text>
+  <text class="body" x="1155" y="280" text-anchor="middle">wird später nachgeholt</text>
+  <path class="arrow-solution" d="M1250 271 H1290"/>
+  <rect class="solution" x="1300" y="235" width="185" height="72" rx="10"/>
+  <text class="label" x="1392" y="260" text-anchor="middle">Alle Chunks</text>
+  <text class="body" x="1392" y="280" text-anchor="middle">werden erreichbar</text>
+
+  <!-- Optical channel before/after -->
+  <rect class="problem" x="180" y="363" width="180" height="72" rx="10"/>
+  <text class="label" x="270" y="388" text-anchor="middle">Kameraaufnahme</text>
+  <text class="body" x="270" y="408" text-anchor="middle">Fokus / Licht / Winkel</text>
+  <path class="arrow-problem" d="M360 399 H400"/>
+  <rect class="problem" x="410" y="363" width="190" height="72" rx="10"/>
+  <text class="label" x="505" y="388" text-anchor="middle">Farbwert ambig</text>
+  <text class="body" x="505" y="408" text-anchor="middle">Frame wird verworfen</text>
+  <path class="arrow-problem" d="M600 399 H640"/>
+  <rect class="problem-soft" x="650" y="363" width="105" height="72" rx="10"/>
+  <text class="label" x="702" y="388" text-anchor="middle">kein QR</text>
+  <text class="body" x="702" y="408" text-anchor="middle">erkannt</text>
+
+  <rect class="solution" x="830" y="363" width="185" height="72" rx="10"/>
+  <circle class="number-solution" cx="850" cy="383" r="13"/><text class="number-text" x="850" y="387" text-anchor="middle">2</text>
+  <text class="label" x="925" y="388" text-anchor="middle">Bildkandidaten</text>
+  <text class="body" x="925" y="408" text-anchor="middle">Crop + Vollbild</text>
+  <path class="arrow-solution" d="M1015 399 H1050"/>
+  <rect class="solution" x="1060" y="363" width="190" height="72" rx="10"/>
+  <circle class="number-solution" cx="1080" cy="383" r="13"/><text class="number-text" x="1080" y="387" text-anchor="middle">3</text>
+  <text class="label" x="1155" y="388" text-anchor="middle">Adaptiver Kontrast</text>
+  <text class="body" x="1155" y="408" text-anchor="middle">dynamische Schwelle</text>
+  <path class="arrow-solution" d="M1250 399 H1290"/>
+  <rect class="solution" x="1300" y="363" width="185" height="72" rx="10"/>
+  <circle class="number-solution" cx="1320" cy="383" r="13"/><text class="number-text" x="1320" y="387" text-anchor="middle">4</text>
+  <text class="label" x="1392" y="388" text-anchor="middle">Fokus + Zoom</text>
+  <text class="body" x="1392" y="408" text-anchor="middle">Kamera steuerbar</text>
+
+  <!-- Receiver timeout -->
+  <rect class="problem" x="180" y="491" width="220" height="72" rx="10"/>
+  <text class="label" x="290" y="516" text-anchor="middle">Starrer Timeout</text>
+  <text class="body" x="290" y="536" text-anchor="middle">Session endet zu früh</text>
+  <path class="arrow-problem" d="M400 527 H450"/>
+  <rect class="problem-soft" x="460" y="491" width="180" height="72" rx="10"/>
+  <text class="label" x="550" y="516" text-anchor="middle">fehlender Chunk</text>
+  <text class="body" x="550" y="536" text-anchor="middle">kein vollständiger Import</text>
+  <path class="arrow-problem" d="M640 527 H690"/>
+  <rect class="problem-soft" x="700" y="491" width="55" height="72" rx="10"/>
+  <text class="label" x="727" y="516" text-anchor="middle">X</text>
+  <text class="body" x="727" y="536" text-anchor="middle">abbruch</text>
+
+  <rect class="solution" x="830" y="491" width="200" height="72" rx="10"/>
+  <circle class="number-solution" cx="850" cy="511" r="13"/><text class="number-text" x="850" y="515" text-anchor="middle">5</text>
+  <text class="label" x="930" y="516" text-anchor="middle">Timeout 45 Stunden</text>
+  <text class="body" x="930" y="536" text-anchor="middle">grosser Bestand möglich</text>
+  <path class="arrow-solution" d="M1030 527 H1060"/>
+  <rect class="solution" x="1070" y="491" width="180" height="72" rx="10"/>
+  <circle class="number-solution" cx="1090" cy="511" r="13"/><text class="number-text" x="1090" y="515" text-anchor="middle">6</text>
+  <text class="label" x="1160" y="516" text-anchor="middle">Reset bei Chunk</text>
+  <text class="body" x="1160" y="536" text-anchor="middle">Fortschritt hält aktiv</text>
+  <path class="arrow-solution" d="M1250 527 H1290"/>
+  <rect class="solution" x="1300" y="491" width="185" height="72" rx="10"/>
+  <text class="label" x="1392" y="516" text-anchor="middle">Session bleibt offen</text>
+  <text class="body" x="1392" y="536" text-anchor="middle">bis alles empfangen ist</text>
+
+  <!-- Session -->
+  <rect class="neutral" x="180" y="619" width="575" height="72" rx="10"/>
+  <text class="label" x="467" y="644" text-anchor="middle">Vorher: ein fehlgeschlagener Frame beeinflusst den gesamten Fortschritt</text>
+  <text class="body" x="467" y="664" text-anchor="middle">Anzeige läuft weiter, Empfänger wartet aber auf einen Chunk, der nie angekommen ist.</text>
+  <rect class="solution" x="830" y="619" width="655" height="72" rx="10"/>
+  <circle class="number-solution" cx="850" cy="639" r="13"/><text class="number-text" x="850" y="643" text-anchor="middle">7</text>
+  <text class="label" x="1157" y="644" text-anchor="middle">Chunks werden gesammelt, sortiert und idempotent akzeptiert</text>
+  <text class="body" x="1157" y="664" text-anchor="middle">Wiederholungen helfen beim Empfang, erzeugen aber keine doppelten Daten.</text>
+
+  <!-- Outcome -->
+  <rect class="problem-soft" x="180" y="747" width="575" height="72" rx="10"/>
+  <text class="problem-head" x="467" y="776" text-anchor="middle">incomplete</text>
+  <text class="body" x="467" y="797" text-anchor="middle">Transfer vor vollständiger Validierung beendet</text>
+  <rect class="result" x="830" y="747" width="655" height="72" rx="10"/>
+  <text class="result-text" x="1157" y="776" text-anchor="middle">vollständige Validierung → Dekompression → Datenbank-Commit</text>
+  <text class="body" x="1157" y="797" text-anchor="middle">Jahresdaten werden erfolgreich zwischen physischen Geräten übertragen.</text>
+
+  <rect class="callout" x="180" y="875" width="1305" height="62" rx="12"/>
+  <text class="callout-text" x="205" y="901">Kernaussage:</text>
+  <text class="body" x="300" y="901">Die Datenlogik war bereits funktionsfähig. Der kritische Fehler lag im optischen Kanal:</text>
+  <text class="body" x="205" y="921">einzelne Frames konnten durch Kamera-, Farb- und Timing-Effekte verloren gehen. Die Lösung kombiniert deshalb Wiederholung,</text>
+  <text class="body" x="205" y="937">Fortschrittstoleranz und robustere Bildauswertung statt nur die Anzeigezeit zu verlängern.</text>
+
+  <line class="legend-line" x1="185" y1="982" x2="220" y2="982" stroke="#b34b68"/>
+  <text class="small" x="230" y="986">Problem / Abbruchrisiko</text>
+  <line class="legend-line" x1="430" y1="982" x2="465" y2="982" stroke="#39734a"/>
+  <text class="small" x="475" y="986">Änderung / Schutzmechanismus</text>
+  <line class="legend-line" x1="730" y1="982" x2="765" y2="982" stroke="#8d7b86" stroke-dasharray="7 5"/>
+  <text class="small" x="775" y="986">Trennlinie zwischen Vorher und Nachher</text>
+</svg>
