@@ -89,14 +89,14 @@ vollständig umgesetzt; siehe [Ist-Architektur](../entwicklung/architektur.adoc)
 
 `sprint-0` `ui`
 
-- [ ] Startbildschirm mit Logo/Titel gestalten
-- [ ] Automatischer Übergang zum Onboarding bzw. Home
+- [x] Startbildschirm mit Logo/Titel gestalten
+- [x] Automatischer Übergang zum Onboarding bzw. Home
 
 ### S0-6 · Onboarding-Screens (statisch)
 
 `sprint-0` `ui`
 
-- [ ] Kurze Einführung in die App (1–3 Schritte)
+- [x] Kurze Einführung in die App (1–3 Schritte)
 - [ ] Oberfläche für die Passphrase-Eingabe (nur Ansicht, ohne Logik)
 - [ ] Hinweistext zur Bedeutung der Passphrase
 
@@ -104,8 +104,8 @@ vollständig umgesetzt; siehe [Ist-Architektur](../entwicklung/architektur.adoc)
 
 `sprint-0` `ui`
 
-- [ ] Begrüssung und persönlicher Bereich
-- [ ] Platz für Zyklus-Vorschau (Beispielwert)
+- [x] Begrüssung und persönlicher Bereich
+- [x] Platz für Zyklus-Vorschau (Beispielwert)
 - [ ] Tageswerte-Bereich (Temperatur, Gewicht als Platzhalter)
 - [ ] Schnellzugriff „Eintrag für heute“ und Sprung zum Kalender
 
@@ -113,17 +113,17 @@ vollständig umgesetzt; siehe [Ist-Architektur](../entwicklung/architektur.adoc)
 
 `sprint-0` `ui`
 
-- [ ] Kategorien als antippbare Bereiche: Blutung, Stimmung, Symptome
-- [ ] Kategorien: sexuelle Aktivität, Verhütung, Tests
-- [ ] Kategorien: Termine, Notizen, Temperatur, Gewicht
-- [ ] Auswahl-Optionen je Kategorie als Chips darstellen (ohne Speichern)
+- [x] Kategorien als antippbare Bereiche: Blutung, Stimmung, Symptome
+- [x] Kategorien: sexuelle Aktivität, Verhütung, Tests
+- [x] Kategorien: Termine, Notizen, Temperatur, Gewicht
+- [x] Auswahl-Optionen je Kategorie als Chips darstellen (ohne Speichern)
 
 ### S0-9 · Kalender-Screen UI (statisch)
 
 `sprint-0` `ui`
 
-- [ ] Monatsansicht mit Beispiel-Markierungen
-- [ ] Antippen eines Tages öffnet die Eingabe-Ansicht
+- [x] Monatsansicht mit Beispiel-Markierungen
+- [x] Antippen eines Tages öffnet die Eingabe-Ansicht
 
 ### S0-10 · Transfer-Screen UI (statisch)
 
@@ -147,10 +147,10 @@ landet und wieder korrekt geladen wird.
 
 `phase-1` `model` `must`
 
-- [ ] Modell für einen Tageseintrag (Datum + gewählte Kategorien)
-- [ ] Modelle für Notiz und Termin
-- [ ] Struktur für die Auswahl-Optionen je Kategorie
-- [ ] Modelle dokumentieren
+- [x] Modell für einen Tageseintrag (Datum + gewählte Kategorien)
+- [x] Modelle für Notiz und Termin
+- [x] Struktur für die Auswahl-Optionen je Kategorie
+- [x] Modelle dokumentieren
 
 ### P1-2 · Lokale Datenbank einrichten
 

@@ -21,6 +21,8 @@ Hier stehen die Anleitungen zum Starten, Prüfen und Anschauen der App-Daten.
 
 ## Anleitungen
 
+- [MLQR-Encoder mit Testansicht](mlqr_encoder.md): Paper-Algorithmus, Ebenen,
+  Referenzbalken und separater Debug-Start mit Testdaten.
 - [Architektur von Regelmässig](architektur.adoc): MVVM-Übersicht für
   Webentwickler mit konkreten Klassen, UI-State, Repository und Storage sowie
   einer separaten Grafik zur Verschlüsselung. Details stehen direkt darunter.
@@ -63,7 +65,7 @@ Passphrasen oder produktiven Zugangsdaten.
 
 | Wert | Einsatzort | Zweck |
 | --- | --- | --- |
-| `regelmaessig-debug-test-key-v1` | [`debug_tracking_keys.dart`](../../lib/services/debug_tracking_keys.dart), nur im Debug-Modus | Öffnen und Verschlüsseln von `regelmaessig_tracking_debug.db` beim normalen App-Start. `main_sqlcipher_debug.dart` ruft denselben Einstieg auf. |
+| `regelmaessig-debug-test-key-v1` | [`debug_tracking_keys.dart`](../../lib/services/debug_tracking_keys.dart), nur im Debug-Modus | Öffnen und Verschlüsseln von `regelmaessig_tracking_debug.db` beim normalen Start über `lib/main.dart`. |
 | `regelmaessig-debug-test-key-v1` | TablePlus, Feld **Passphrase** | Verwendet beim Öffnen der ursprünglichen Datenbankkopie und der Originaldatei unter **Regelmässig – Simulator aktuell**. Es wurde dafür kein neuer Schlüssel erzeugt. |
 | `regelmaessig-debug-test-key-v1` | SQLCipher-CLI-Beispiel in der [Speicheranleitung](sqlcipher_speicherung.md#kopie-entschlüsseln-und-abfragen) | Derselbe Schlüssel wird dort über `PRAGMA key` gesetzt. |
 | `regelmaessig-debug-test-key-v1` | [Integrationstest](../../integration_test/sqlcipher_tracking_storage_test.dart) zum normalen App-Start | Prüft, ob der reguläre Speichern-Ablauf in die Debug-Datenbank schreibt. |

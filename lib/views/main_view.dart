@@ -142,7 +142,7 @@ class _MainViewState extends State<MainView> with WidgetsBindingObserver {
             viewModel: _cycleHistoryViewModel,
             onRecordDay: _record,
           ),
-          const TransferView(),
+          TransferView(trackingRepository: _tracking),
         ],
       ),
     ),
