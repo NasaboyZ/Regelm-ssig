@@ -107,20 +107,36 @@ class _TransferReceiveViewState extends State<TransferReceiveView>
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            if (ready)
-                              Center(child: CameraPreview(camera))
-                            else
-                              Center(
-                                child: _model.paused
-                                    ? const Icon(
-                                        Icons.videocam_off_outlined,
-                                        color: Colors.white,
-                                        size: 48,
+                            LayoutBuilder(
+                              builder: (context, constraints) => GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapUp: ready
+                                    ? (details) => _model.focusAt(
+                                        Offset(
+                                          (details.localPosition.dx /
+                                                  constraints.maxWidth)
+                                              .clamp(0, 1),
+                                          (details.localPosition.dy /
+                                                  constraints.maxHeight)
+                                              .clamp(0, 1),
+                                        ),
                                       )
-                                    : const CircularProgressIndicator(
-                                        color: Colors.white,
+                                    : null,
+                                child: ready
+                                    ? Center(child: CameraPreview(camera))
+                                    : Center(
+                                        child: _model.paused
+                                            ? const Icon(
+                                                Icons.videocam_off_outlined,
+                                                color: Colors.white,
+                                                size: 48,
+                                              )
+                                            : const CircularProgressIndicator(
+                                                color: Colors.white,
+                                              ),
                                       ),
                               ),
+                            ),
                             const IgnorePointer(
                               child: ExcludeSemantics(
                                 child: CustomPaint(
@@ -153,6 +169,27 @@ class _TransferReceiveViewState extends State<TransferReceiveView>
                       ),
                     ),
                   ),
+                  if (ready && _model.maxZoom > _model.minZoom) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.zoom_out, color: AppColors.muted),
+                        Expanded(
+                          child: Slider(
+                            value: _model.zoom.clamp(
+                              _model.minZoom,
+                              _model.maxZoom,
+                            ),
+                            min: _model.minZoom,
+                            max: _model.maxZoom,
+                            label: '${_model.zoom.toStringAsFixed(1)}×',
+                            onChanged: (value) => _model.setZoom(value),
+                          ),
+                        ),
+                        const Icon(Icons.zoom_in, color: AppColors.muted),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Text(
                     _model.paused

@@ -16,6 +16,8 @@ class TransferDisplayFrame {
 
 /// Preview model or a sequence of real transfer images.
 class TransferSendViewModel {
+  static const temporalRounds = 3;
+
   TransferSendViewModel.preview({
     MlqrEncoderService encoder = const MlqrEncoderService(),
   }) : isPreview = true,
@@ -50,11 +52,12 @@ class TransferSendViewModel {
           raster: code.displayRaster,
           mode: TransferDisplayMode.layered,
         ),
-      for (final frame in sequence.temporalFrames)
-        TransferDisplayFrame(
-          raster: frame.raster,
-          mode: TransferDisplayMode.temporal,
-        ),
+      for (var round = 0; round < temporalRounds; round++)
+        for (final frame in sequence.temporalFrames)
+          TransferDisplayFrame(
+            raster: frame.raster,
+            mode: TransferDisplayMode.temporal,
+          ),
     ];
   }
 
@@ -79,7 +82,9 @@ class TransferSendViewModel {
   int? get chunkSize => transferSequence?.package.chunkSize;
   int get maxPayloadLayersPerCode =>
       transferSequence?.maxPayloadLayersPerCode ?? code.payloadCount;
-  int get temporalFrameCount => transferSequence?.temporalFrames.length ?? 0;
+  int get temporalFrameCount => frames
+      .where((frame) => frame.mode == TransferDisplayMode.temporal)
+      .length;
   TransferDisplayFrame frameAt(int index) => frames[index];
   bool isTemporalAt(int index) =>
       frameAt(index).mode == TransferDisplayMode.temporal;

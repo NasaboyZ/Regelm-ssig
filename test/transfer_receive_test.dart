@@ -158,6 +158,25 @@ void main() {
   );
 
   testWidgets(
+    'Scanner exposes focus and zoom controls through the camera seam',
+    (tester) async {
+      final camera = FakeMlqrCamera();
+      final model = TransferReceiveViewModel(source: camera);
+      model.resume();
+      await tester.pump();
+
+      await model.focusAt(const Offset(0.5, 0.5));
+      await model.setZoom(3);
+
+      expect(camera.focusPoint, const Offset(0.5, 0.5));
+      expect(camera.zoom, 3);
+      expect(model.zoom, 3);
+      model.dispose();
+      await tester.pump();
+    },
+  );
+
+  testWidgets(
     'Dispose during native initialization releases late camera and ignores callbacks',
     (tester) async {
       final camera = FakeMlqrCamera()..starting = Completer<void>();

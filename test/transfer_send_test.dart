@@ -9,10 +9,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:regelmaessig/theme/app_colors.dart';
+import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/viewmodels/transfer_send_view_model.dart';
 import 'package:regelmaessig/views/transfer/transfer_send_view.dart';
 import 'package:regelmaessig/views/transfer/transfer_view.dart';
 import 'package:regelmaessig/widgets/transfer/mlqr_raster_view.dart';
+import 'package:regelmaessig/services/mlqr_transfer_service.dart';
 
 Widget harness({Widget? home}) => MaterialApp(
   debugShowCheckedModeBanner: false,
@@ -33,6 +35,24 @@ Widget harness({Widget? home}) => MaterialApp(
 );
 
 void main() {
+  test(
+    'repeats temporal chunks so missed camera frames can be recovered',
+    () async {
+      final sequence = await MlqrTransferService().encodeDevelopment(
+        TrackingSnapshot(),
+        transferId: 'repeat-test',
+        chunkSize: 5,
+      );
+      final model = TransferSendViewModel.sequence(sequence);
+
+      expect(model.temporalFrameCount, greaterThan(sequence.chunkCount));
+      expect(
+        model.temporalFrameCount,
+        sequence.temporalFrames.length * TransferSendViewModel.temporalRounds,
+      );
+    },
+  );
+
   testWidgets('Send opens an actual MLQR preview; both exit actions return', (
     tester,
   ) async {

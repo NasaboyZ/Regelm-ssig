@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Square binary module matrix. True means black, as in the QR library.
 class QrModuleMatrix {
   QrModuleMatrix({required this.size, required List<bool> darkModules})
@@ -40,6 +42,23 @@ class MlqrRgbRaster {
     RangeError.checkValidIndex(row, pixels, 'row', height);
     RangeError.checkValidIndex(column, pixels, 'column', width);
     return pixels[row * width + column];
+  }
+
+  /// Returns the centered square used by the on-screen scan guide.
+  MlqrRgbRaster centerCropSquare({double fraction = 0.84}) {
+    final safeFraction = fraction.clamp(0.1, 1.0).toDouble();
+    final side = (math.min(width, height) * safeFraction).round();
+    final left = (width - side) ~/ 2;
+    final top = (height - side) ~/ 2;
+    return MlqrRgbRaster(
+      width: side,
+      height: side,
+      pixels: [
+        for (var row = 0; row < side; row++)
+          for (var column = 0; column < side; column++)
+            pixelAt(top + row, left + column),
+      ],
+    );
   }
 }
 

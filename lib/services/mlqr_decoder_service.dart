@@ -184,14 +184,25 @@ class MlqrDecoderService {
     );
     for (final grid in MlqrQrAdapter().locate(image)) {
       try {
-        final modules = <bool>[];
+        final luminances = <double>[];
         for (var row = 0; row < grid.size; row++) {
           for (var col = 0; col < grid.size; col++) {
             final rgb = grid.sample(col + 0.5, row + 0.5);
-            final luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
-            modules.add(luminance < 128);
+            luminances.add(0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]);
           }
         }
+        final sorted = [...luminances]..sort();
+        final low = sorted[(sorted.length * 0.1).floor()];
+        final high = sorted[(sorted.length * 0.9).floor()];
+        final threshold = (low + high) / 2;
+        if (high - low < 20) {
+          throw const MlqrDecodeException(
+            'Schwarz-Weiss-Kontrast ist nicht eindeutig.',
+          );
+        }
+        final modules = [
+          for (final luminance in luminances) luminance < threshold,
+        ];
         final packet = MlqrQrAdapter().decode(
           QrModuleMatrix(size: grid.size, darkModules: modules),
         );

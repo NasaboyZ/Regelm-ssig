@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -18,15 +19,19 @@ Future<MlqrDecoded?> decodeCameraFrame(MlqrCameraFrame frame) =>
 
 MlqrDecoded? _decodeFrame(MlqrCameraFrame frame) {
   final raster = frame.toRaster();
-  try {
-    return const MlqrDecoderService().decodeImage(raster);
-  } on MlqrDecodeException {
+  final decoder = const MlqrDecoderService();
+  for (final candidate in [raster.centerCropSquare(), raster]) {
     try {
-      return const MlqrDecoderService().decodeTemporalImage(raster);
+      return decoder.decodeImage(candidate);
     } on MlqrDecodeException {
-      return null;
+      try {
+        return decoder.decodeTemporalImage(candidate);
+      } on MlqrDecodeException {
+        // Continue with the next candidate or report an unreadable frame.
+      }
     }
   }
+  return null;
 }
 
 class TransferReceiveViewModel extends ChangeNotifier {
@@ -35,7 +40,7 @@ class TransferReceiveViewModel extends ChangeNotifier {
     Future<MlqrDecoded?> Function(MlqrCameraFrame)? decode,
     TrackingRepository? repository,
     MlqrTransferService? transfer,
-    this.scanTimeout = const Duration(seconds: 45),
+    this.scanTimeout = const Duration(hours: 45),
   }) : _source = source ?? DeviceMlqrCameraSource(),
        _decode = decode ?? decodeCameraFrame,
        _repository = repository,
@@ -55,6 +60,9 @@ class TransferReceiveViewModel extends ChangeNotifier {
   bool _sessionStarted = false;
   bool initializing = true;
   bool paused = false;
+  double zoom = 1;
+  double minZoom = 1;
+  double maxZoom = 1;
   TransferResult? result;
   CameraController? get camera => _source.controller;
   int get receivedChunkCount => _chunks.receivedCount;
@@ -85,22 +93,11 @@ class TransferReceiveViewModel extends ChangeNotifier {
           return;
         }
         initializing = false;
+        minZoom = _source.minZoom;
+        maxZoom = _source.maxZoom;
+        zoom = minZoom;
         _timer?.cancel();
-        _timer = Timer(
-          scanTimeout,
-          () => _finish(
-            TransferFailed(
-              reason: expectedChunkCount == null
-                  ? TransferFailureReason.unreadable
-                  : TransferFailureReason.incomplete,
-              receivedCodeCount: expectedChunkCount == null
-                  ? null
-                  : receivedChunkCount,
-              expectedCodeCount: expectedChunkCount,
-            ),
-            epoch,
-          ),
-        );
+        _armTimeout(epoch);
         _notify();
       } catch (error) {
         final denied =
@@ -117,6 +114,34 @@ class TransferReceiveViewModel extends ChangeNotifier {
         );
       }
     });
+  }
+
+  void _armTimeout(int epoch) {
+    _timer?.cancel();
+    _timer = Timer(
+      scanTimeout,
+      () => _finish(
+        TransferFailed(
+          reason: expectedChunkCount == null
+              ? TransferFailureReason.unreadable
+              : TransferFailureReason.incomplete,
+          receivedCodeCount: expectedChunkCount == null
+              ? null
+              : receivedChunkCount,
+          expectedCodeCount: expectedChunkCount,
+        ),
+        epoch,
+      ),
+    );
+  }
+
+  Future<void> focusAt(Offset point) => _source.focusAt(point);
+
+  Future<void> setZoom(double value) async {
+    final next = value.clamp(minZoom, maxZoom).toDouble();
+    await _source.setZoom(next);
+    zoom = next;
+    _notify();
   }
 
   Future<void> _onFrame(MlqrCameraFrame frame, int epoch) async {
@@ -153,7 +178,10 @@ class TransferReceiveViewModel extends ChangeNotifier {
         return;
       }
       final added = _chunks.acceptAll(parsed);
-      if (added > 0) _notify();
+      if (added > 0) {
+        _armTimeout(epoch);
+        _notify();
+      }
       if (!_chunks.isComplete || _disposed) return;
       final incoming = await _transfer.codec.decode(_chunks.orderedChunks);
       final repository = _repository!;

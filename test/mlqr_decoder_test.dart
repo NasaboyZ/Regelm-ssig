@@ -70,6 +70,22 @@ MlqrRgbRaster temporalRaster(QrModuleMatrix matrix) {
   );
 }
 
+MlqrRgbRaster relight(
+  MlqrRgbRaster image, {
+  required int dark,
+  required int light,
+}) => MlqrRgbRaster(
+  width: image.width,
+  height: image.height,
+  pixels: [
+    for (final pixel in image.pixels)
+      (() {
+        final value = pixel == 0 ? dark : light;
+        return (value << 16) | (value << 8) | value;
+      })(),
+  ],
+);
+
 void main() {
   const encoder = MlqrEncoderService();
   const decoder = MlqrDecoderService();
@@ -152,6 +168,18 @@ void main() {
 
     expect(decoded.packets, [input.first]);
     expect(decoded.opticalLayerCount, 1);
+  });
+
+  test('Temporal fallback adapts to a bright display black level', () {
+    final input = packets(1);
+    final encoded = encoder.encode(input);
+    final temporal = relight(
+      enlarge(temporalRaster(encoded.layers.first.matrix)),
+      dark: 170,
+      light: 230,
+    );
+
+    expect(decoder.decodeTemporalImage(temporal).packets, [input.first]);
   });
 
   test(

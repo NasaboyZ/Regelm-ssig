@@ -41,19 +41,30 @@ class MlqrQrAdapter {
   Iterable<MlqrSamplingGrid> locate(MlqrRgbRaster image) sync* {
     for (var mode = 0; mode < 3; mode++) {
       final pixels = Int32List(image.pixels.length);
+      var minimum = 255;
+      var maximum = 0;
       for (var i = 0; i < pixels.length; i++) {
         final rgb = image.pixels[i];
-        if (mode == 0) {
-          pixels[i] = rgb;
-        } else {
-          final r = (rgb >> 16) & 255;
-          final g = (rgb >> 8) & 255;
-          final b = rgb & 255;
-          final value = mode == 1
-              ? math.min(r, math.min(g, b))
-              : math.max(r, math.max(g, b));
-          pixels[i] = value * 0x010101;
+        final r = (rgb >> 16) & 255;
+        final g = (rgb >> 8) & 255;
+        final b = rgb & 255;
+        final value = mode == 0
+            ? (0.299 * r + 0.587 * g + 0.114 * b).round()
+            : mode == 1
+            ? math.min(r, math.min(g, b))
+            : math.max(r, math.max(g, b));
+        pixels[i] = value;
+        minimum = math.min(minimum, value);
+        maximum = math.max(maximum, value);
+      }
+      final range = maximum - minimum;
+      if (range > 0 && range < 220) {
+        for (var i = 0; i < pixels.length; i++) {
+          pixels[i] = ((pixels[i] - minimum) * 255 / range).round();
         }
+      }
+      for (var i = 0; i < pixels.length; i++) {
+        pixels[i] = pixels[i] * 0x010101;
       }
       try {
         final binary = BinaryBitmap(
