@@ -38,11 +38,12 @@ void main() {
   test(
     'repeats temporal chunks so missed camera frames can be recovered',
     () async {
-      final sequence = await MlqrTransferService().encodeDevelopment(
-        TrackingSnapshot(),
-        transferId: 'repeat-test',
-        chunkSize: 5,
-      );
+      final sequence = await MlqrTransferService()
+          .encodeUnencryptedSnapshotForDevelopment(
+            TrackingSnapshot(),
+            transferId: 'repeat-test',
+            chunkSize: 5,
+          );
       final model = TransferSendViewModel.sequence(sequence);
 
       expect(model.temporalFrameCount, greaterThan(sequence.chunkCount));
@@ -74,15 +75,10 @@ void main() {
       view.viewModel.code.raster.pixels.any((p) => p != 0 && p != 0xffffff),
       isTrue,
     );
-    expect(
-      tester
-          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
-          .value,
-      0,
-    );
+    expect(find.byType(LinearProgressIndicator), findsNothing);
     await tester.pump(const Duration(seconds: 10));
     expect(find.text('Code 1 von 1'), findsOneWidget);
-    expect(find.text('0 Codes bestätigt · Testvorschau'), findsOneWidget);
+    expect(find.textContaining('Codes bestätigt'), findsNothing);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.byType(TransferSendView), findsNothing);

@@ -38,12 +38,11 @@ class TransferReceiveViewModel extends ChangeNotifier {
   TransferReceiveViewModel({
     MlqrCameraSource? source,
     Future<MlqrDecoded?> Function(MlqrCameraFrame)? decode,
-    TrackingRepository? repository,
+    this._repository,
     MlqrTransferService? transfer,
     this.scanTimeout = const Duration(hours: 45),
   }) : _source = source ?? DeviceMlqrCameraSource(),
        _decode = decode ?? decodeCameraFrame,
-       _repository = repository,
        _transfer = transfer ?? MlqrTransferService();
 
   final MlqrCameraSource _source;
@@ -183,10 +182,15 @@ class TransferReceiveViewModel extends ChangeNotifier {
         _notify();
       }
       if (!_chunks.isComplete || _disposed) return;
-      final incoming = await _transfer.codec.decode(_chunks.orderedChunks);
+      final incoming = await _transfer.payloadCodec.decodeSnapshot(
+        _chunks.orderedChunks,
+      );
       final repository = _repository!;
       await repository.load();
-      final merged = _transfer.mergeSnapshots(repository.snapshot, incoming);
+      final merged = _transfer.mergeIncomingSnapshot(
+        repository.snapshot,
+        incoming,
+      );
       await repository.save(merged);
       _finish(
         TransferSucceeded(
@@ -195,7 +199,7 @@ class TransferReceiveViewModel extends ChangeNotifier {
         ),
         epoch,
       );
-    } on TransferCodecException {
+    } on TransferPayloadException {
       _finish(
         TransferFailed(reason: TransferFailureReason.verificationFailed),
         epoch,

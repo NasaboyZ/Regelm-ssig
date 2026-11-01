@@ -137,10 +137,15 @@ class RecordViewModel extends ChangeNotifier {
       (n, g) => n + (entry.selections[g.id]?.length ?? 0),
     );
     count += entry.customValues[category.id]?.length ?? 0;
-    if (category.id == 'bleeding')
+    if (category.id == 'bleeding') {
       count += _periods.where((p) => p.contains(selectedDay)).length;
-    if (category.id == 'notes' && entry.note.trim().isNotEmpty) count++;
-    if (category.id == 'appointments') count += entry.appointments.length;
+    }
+    if (category.id == 'notes' && entry.note.trim().isNotEmpty) {
+      count++;
+    }
+    if (category.id == 'appointments') {
+      count += entry.appointments.length;
+    }
     if (category.id == 'measurements') {
       count +=
           (entry.temperature == null ? 0 : 1) + (entry.weight == null ? 0 : 1);

@@ -58,8 +58,9 @@ class CycleCalculationService {
     for (final d in snapshot.days.values.where((d) => !d.date.isAfter(today))) {
       final flow = d.selections['flow'] ?? {};
       if (flow.contains('spotting')) spottingDays.add(d.date);
-      if (flow.any({'light', 'medium', 'heavy'}.contains))
+      if (flow.any({'light', 'medium', 'heavy'}.contains)) {
         periodDays.add(d.date);
+      }
     }
     return CycleSummary(
       today: today,

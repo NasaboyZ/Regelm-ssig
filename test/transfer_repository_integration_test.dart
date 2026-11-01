@@ -31,11 +31,12 @@ void main() {
           ),
         },
       );
-      final sequence = await MlqrTransferService().encodeDevelopment(
-        sourceSnapshot,
-        transferId: 'integration-transfer',
-        chunkSize: 5,
-      );
+      final sequence = await MlqrTransferService()
+          .encodeUnencryptedSnapshotForDevelopment(
+            sourceSnapshot,
+            transferId: 'integration-transfer',
+            chunkSize: 5,
+          );
       final decoder = const MlqrDecoderService();
       final decoded = [
         for (final code in sequence.codes)

@@ -40,14 +40,17 @@ class _PeriodDialogState extends State<PeriodDialog> {
       cancelText: 'Abbrechen',
       confirmText: 'Auswählen',
     );
-    if (date != null && mounted)
-      setState(() {
-        if (isEnd) {
-          end = date;
-        } else {
-          start = date;
-        }
-      });
+    if (date == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      if (isEnd) {
+        end = date;
+      } else {
+        start = date;
+      }
+    });
   }
 
   @override

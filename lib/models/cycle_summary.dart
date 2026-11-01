@@ -42,9 +42,7 @@ class CycleSummary {
   final Set<DateTime> entryDays;
   final Set<DateTime> periodDays;
   final Set<DateTime> spottingDays;
-  Set<DateTime> get predictedDays => {
-    if (predictedNextStart != null) predictedNextStart!,
-  };
+  Set<DateTime> get predictedDays => {?predictedNextStart};
   int? get daysUntilPredictedStart => predictedNextStart == null
       ? null
       : calendarDaysBetween(today, predictedNextStart!);
@@ -66,8 +64,9 @@ class CycleSummary {
     final days = daysUntilPredictedStart;
     if (days == null) return null;
     if (days == 0) return 'Geschätzter Periodenbeginn heute';
-    if (days < 0)
+    if (days < 0) {
       return 'Der geschätzte Termin liegt ${-days} ${days == -1 ? 'Tag' : 'Tage'} zurück';
+    }
     return 'Nächste Periode voraussichtlich in $days ${days == 1 ? 'Tag' : 'Tagen'}';
   }
 }

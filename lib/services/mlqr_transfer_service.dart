@@ -45,20 +45,20 @@ class MlqrTransferService {
   MlqrTransferService({
     MlqrEncoderService? encoder,
     MlqrDecoderService? decoder,
-    TransferCodec? codec,
+    TrackingSnapshotTransferCodec? payloadCodec,
     this.targetQrVersion = 10,
     this.maxPayloadLayersPerCode = 7,
   }) : encoder = encoder ?? const MlqrEncoderService(),
        decoder = decoder ?? const MlqrDecoderService(),
-       codec = codec ?? TransferCodec();
+       payloadCodec = payloadCodec ?? TrackingSnapshotTransferCodec();
 
   final MlqrEncoderService encoder;
   final MlqrDecoderService decoder;
-  final TransferCodec codec;
+  final TrackingSnapshotTransferCodec payloadCodec;
   final int targetQrVersion;
   final int maxPayloadLayersPerCode;
 
-  Future<MlqrTransferSequence> encode(
+  Future<MlqrTransferSequence> encodeEncryptedSnapshot(
     TrackingSnapshot snapshot, {
     required String passphrase,
     required String transferId,
@@ -66,7 +66,7 @@ class MlqrTransferService {
   }) async {
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: true);
-    final package = await codec.encode(
+    final package = await payloadCodec.encodeEncryptedSnapshot(
       snapshot,
       passphrase: passphrase,
       transferId: transferId,
@@ -75,14 +75,14 @@ class MlqrTransferService {
     return _encodePackage(package);
   }
 
-  Future<MlqrTransferSequence> encodeDevelopment(
+  Future<MlqrTransferSequence> encodeUnencryptedSnapshotForDevelopment(
     TrackingSnapshot snapshot, {
     required String transferId,
     int? chunkSize,
   }) async {
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: false);
-    final package = await codec.encodeDevelopment(
+    final package = await payloadCodec.encodeUnencryptedSnapshotForDevelopment(
       snapshot,
       transferId: transferId,
       chunkSize: effectiveChunkSize,
@@ -114,7 +114,7 @@ class MlqrTransferService {
   }) {
     final sample = TransferChunk(
       transferId: transferId,
-      protocolVersion: TransferCodec.protocolVersion,
+      protocolVersion: TrackingSnapshotTransferCodec.protocolVersion,
       index: 0,
       total: 0xffffffff,
       salt: encrypted ? Uint8List(16) : Uint8List(0),
@@ -197,7 +197,7 @@ class MlqrTransferService {
     );
   }
 
-  Future<TrackingSnapshot> decode(
+  Future<TrackingSnapshot> decodeSnapshot(
     Iterable<MlqrDecoded> decodedCodes, {
     required String passphrase,
   }) async {
@@ -207,10 +207,10 @@ class MlqrTransferService {
         chunks.add(TransferChunk.fromBytes(packet));
       }
     }
-    return codec.decode(chunks, passphrase: passphrase);
+    return payloadCodec.decodeSnapshot(chunks, passphrase: passphrase);
   }
 
-  Future<TrackingSnapshot> decodeDevelopment(
+  Future<TrackingSnapshot> decodeUnencryptedSnapshotForDevelopment(
     Iterable<MlqrDecoded> decodedCodes,
   ) async {
     final chunks = <TransferChunk>[];
@@ -219,10 +219,10 @@ class MlqrTransferService {
         chunks.add(TransferChunk.fromBytes(packet));
       }
     }
-    return codec.decode(chunks);
+    return payloadCodec.decodeSnapshot(chunks);
   }
 
-  TrackingSnapshot mergeSnapshots(
+  TrackingSnapshot mergeIncomingSnapshot(
     TrackingSnapshot existing,
     TrackingSnapshot incoming,
   ) {
@@ -243,15 +243,15 @@ class MlqrTransferService {
     );
   }
 
-  Future<TrackingSnapshot> decodeImages(
+  Future<TrackingSnapshot> decodeSnapshotFromImages(
     Iterable<MlqrRgbRaster> images, {
     required String passphrase,
   }) async {
     final decoded = [for (final image in images) decoder.decodeImage(image)];
-    return decode(decoded, passphrase: passphrase);
+    return decodeSnapshot(decoded, passphrase: passphrase);
   }
 
-  Future<TrackingSnapshot> decodeCodes(
+  Future<TrackingSnapshot> decodeSnapshotFromMlqrCodes(
     Iterable<MlqrCode> codes, {
     required String passphrase,
   }) {
@@ -262,10 +262,12 @@ class MlqrTransferService {
           opticalLayerCount: code.layers.length,
         ),
     ];
-    return decode(decoded, passphrase: passphrase);
+    return decodeSnapshot(decoded, passphrase: passphrase);
   }
 
-  Future<TrackingSnapshot> decodeCodesDevelopment(Iterable<MlqrCode> codes) {
+  Future<TrackingSnapshot> decodeUnencryptedSnapshotFromMlqrCodesForDevelopment(
+    Iterable<MlqrCode> codes,
+  ) {
     final decoded = [
       for (final code in codes)
         decoder.decodeRaster(
@@ -273,6 +275,6 @@ class MlqrTransferService {
           opticalLayerCount: code.layers.length,
         ),
     ];
-    return decodeDevelopment(decoded);
+    return decodeUnencryptedSnapshotForDevelopment(decoded);
   }
 }

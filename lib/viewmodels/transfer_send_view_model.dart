@@ -68,7 +68,6 @@ class TransferSendViewModel {
   final Duration codeInterval;
   MlqrCode get code => codes.first;
   MlqrCode codeAt(int index) => codes[index];
-  int get codeNumber => 1;
   int get codeCount => frames.length;
   int get chunkCount => transferSequence?.chunkCount ?? codes.length;
   int get maxLayersPerCode =>
@@ -88,6 +87,4 @@ class TransferSendViewModel {
   TransferDisplayFrame frameAt(int index) => frames[index];
   bool isTemporalAt(int index) =>
       frameAt(index).mode == TransferDisplayMode.temporal;
-  int get confirmedCodeCount => 0;
-  double get progress => confirmedCodeCount / codeCount;
 }

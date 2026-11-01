@@ -153,8 +153,10 @@ Abbruch. Der Rahmen dient nur der Orientierung; ausgewertet wird das gesamte
 Bild. Code, Ruhezone und Referenzbalken müssen vollständig sichtbar sein.
 Die Kamera wird beim Verlassen oder beim Hintergrundwechsel freigegeben.
 Bei Rückkehr startet eine neue Sitzung; verspätete Ergebnisse einer alten
-Sitzung werden ignoriert. Nach 45 Sekunden ohne vollständiges Ergebnis folgt
-die Fehleransicht. Ein unlesbares Einzelbild beendet den Scan nicht.
+Sitzung werden ignoriert. Die Standardsitzung läuft bis zu 45 Stunden. Dieser
+lange Zeitraum ist für grosse Bestände gedacht, insbesondere für ein ganzes
+Jahr zyklischer Daten über physische Geräte. Ein unlesbares Einzelbild beendet
+den Scan nicht.
 
 `MlqrCameraSource` kapselt die native Kamera. Das Paket `camera` liefert rohe
 Farbbilder, auch wenn ein Standard-Barcode-Scanner den MLQR nicht erkennt.
@@ -180,6 +182,38 @@ Zurückgegeben werden die QR-Byte-Segmente, nicht die QR-Datencodewörter oder
 ein verlustbehaftet dekodierter Text. Alle Nutzdatenebenen müssen dekodierbar
 sein. Mehrdeutige Farben, fehlende Referenzen oder beschädigte Ebenen führen
 zu keinem Erfolg; Standard-QR ohne Referenzbalken wird nicht akzeptiert.
+
+### Robustheit der physischen Geräteübertragung
+
+Die erfolgreiche Übertragung eines Jahresbestands zwischen physischen Geräten
+beruht nicht nur auf der verlängerten Scanzeit. Die im Commit
+`faaaf05fef2db990a32615d1bb74b6f747723ad5` eingeführte Lösung kombiniert
+mehrere Sicherungen:
+
+- **Wiederholung der temporalen Daten:** Die vollständige temporale QR-Sequenz
+  wird drei Mal angezeigt. Verlorene oder zu spät dekodierte Kameraframes
+  können dadurch in einer späteren Runde erneut gelesen werden.
+- **Fortschrittsbasierter Timeout:** Nach jedem neu akzeptierten Chunk wird der
+  Timeout neu gestartet. Die Übertragung läuft weiter, solange tatsächlich
+  Fortschritt eintrifft.
+- **Zwei Bildkandidaten:** Der Empfänger versucht zuerst einen zentrierten
+  Ausschnitt des Kamerabilds und danach das vollständige Bild. Beide Varianten
+  werden normal und temporal dekodiert.
+- **Adaptive Kontrastauswertung:** Die QR-Lokalisierung probiert Luminanz,
+  Min-/Max-Farbkanal und Kontrastnormalisierung. Beim temporalen Decoder wird
+  die Schwarz-Weiss-Schwelle aus dem 10. und 90. Perzentil des aktuellen Bildes
+  berechnet. Displays, deren Schwarz nicht vollständig dunkel erscheint,
+  bleiben dadurch lesbar; Bilder mit praktisch keinem Kontrast werden dagegen
+  verworfen.
+- **Kamerasteuerung:** Fokus und Belichtung werden automatisch konfiguriert.
+  Durch Antippen kann der Empfänger zusätzlich auf eine Stelle fokussieren;
+  falls das Gerät Zoom unterstützt, steht ein Zoom-Slider zur Verfügung.
+
+Die temporale Wiederholung ist besonders wichtig für Jahresdaten: Sie macht
+die Übertragung langsamer, reduziert aber die Abhängigkeit von einzelnen
+verlorenen Frames und vermeidet bei der temporalen Darstellung die engen
+Farbabstände der stark belegten 15-Layer-MLQR-Codes. Die Übertragung benötigt
+keinen Rückkanal zwischen Sender und Empfänger.
 
 ### Praktische Grenze der 15 Ebenen
 
@@ -232,43 +266,53 @@ zu dekodieren. Die Chunk-Metadaten bleiben unverändert; `transferId`, `index`
 und `total` ordnen die Layer wieder der Transfersession zu.
 
 Der Sender zeigt zunächst die farbigen MLQR-Codes und anschliessend die
-temporalen Layer. Die temporale Runde wird wiederholt. Dadurch können einzelne
-verlorene Kameraframes nachgeholt werden, ohne einen Rückkanal zwischen den
-Geräten einzuführen. Die Methode ist langsamer, vermeidet aber die engen
-RGB-Abstände der 15-Layer-Darstellung und kann auch mit einem gewöhnlichen
-Schwarzweiss-QR-Reader grundsätzlich erkannt werden.
+temporalen Layer. Diese komplette Sequenz wird standardmässig drei Mal
+gesendet. Dadurch können einzelne verlorene Kameraframes nachgeholt werden,
+ohne einen Rückkanal zwischen den Geräten einzuführen. Die Methode ist
+langsamer, vermeidet aber die engen RGB-Abstände der 15-Layer-Darstellung und
+kann auch mit einem gewöhnlichen Schwarzweiss-QR-Reader grundsätzlich erkannt
+werden.
 
-### Erkenntnis aus dem aktuellen Hardwaretest
+Jeder erkannte Chunk setzt beim Empfänger den laufenden Scan-Timeout zurück.
+Duplikate werden vom `TransferChunkAccumulator` idempotent behandelt; die
+dreifache Anzeige führt daher nicht zu mehrfach importierten Daten.
 
-Beim Test zwischen einem Apple-Simulator beziehungsweise Gerät und einem
-zweiten Smartphone beendet die Empfangsansicht den Vorgang aktuell mit
-„Übertragung nicht abgeschlossen“, bevor ungefähr die Hälfte der angezeigten
-QR-Bilder verarbeitet wurde. Der digitale Jahresdatensatz funktioniert in den
-automatisierten Tests; deshalb ist die Kompression selbst bisher nicht als
-Fehlerursache bestätigt.
+### Ergebnis des Hardwaretests
 
-Bestätigte Code-Fakten sind, dass der Empfänger nach der Initialisierung einen
-Timeout von 45 Sekunden verwendet, Chunks nur nach erfolgreicher Dekodierung
-sammelt und keinen Rückkanal zum Sender besitzt. Der Sender zeigt die Sequenz
-unabhängig davon weiter an, ob ein Bild auf dem Empfänger erfolgreich gelesen
-wurde. Zudem zählt die Anzeige Bilder, während der Empfänger Transfer-Chunks
-zählt. Ein farbiger MLQR kann mehrere Chunks enthalten, ein temporaler Layer
-enthält dagegen nur einen Chunk. Die sichtbare Bildposition entspricht deshalb
-nicht direkt dem Empfangsfortschritt.
+Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
+Geräten ist mit der Lösung aus Commit
+`faaaf05fef2db990a32615d1bb74b6f747723ad5` erfolgreich möglich. Der Transfer
+kann länger dauern als ein kleiner Testtransfer, bleibt aber aktiv, solange
+neue Chunks eintreffen. Die temporale Sequenz wird mehrfach angezeigt und
+fehlende Kameraframes können dadurch nachgeholt werden. Wiederholte Chunks
+werden nur für den Fortschritt berücksichtigt und nicht nochmals importiert.
 
-Noch nicht bestätigt ist, an welcher Stelle der reale Kamerapfad scheitert.
-Mögliche Fehlerstellen sind die MLQR-Lokalisierung, der Referenzbalken, die
-RGB-Farbtrennung, die Dekodierung eines rekonstruierten Layers oder die
-temporale Schwarzweiss-QR-Erkennung. Der frühe Abbruch beweist daher noch
-nicht, dass die zweite Hälfte der Daten grundsätzlich fehlerhaft ist; er zeigt
-zunächst, dass der aktuelle Ablauf die vollständige Sequenz innerhalb des
-Timeouts nicht zuverlässig erkennt.
+Für die Fehlersuche sind weiterhin die empfangene Chunk-Anzahl und die
+erwartete Chunk-Anzahl massgeblich. Ein vollständiger Erfolg wird erst nach
+vollständiger Dekodierung, Dekompression, Deserialisierung und Datenbank-Commit
+gemeldet.
 
-Für die nächste Hardwaremessung müssen empfangene und erwartete Chunk-Anzahl,
-der zuletzt erfolgreiche Decoderpfad sowie die verstrichene Zeit getrennt
-erfasst werden. Erst danach lässt sich entscheiden, ob die Anzeigezeit, der
-Timeout, die Decoderkalibrierung oder die Sequenzsteuerung angepasst werden
-muss.
+Die folgende Grafik zeigt die Ursache-Wirkungs-Kette als Vorher-Nachher-
+Zeitachse. Sie macht sichtbar, dass die verlängerte Scanzeit allein nicht die
+Lösung war: Erst die Kombination aus Wiederholung, Timeout-Fortschritt,
+robusterer Bildauswertung und Kamerasteuerung verhindert den Abbruch durch
+einzelne verlorene Frames.
+
+![Vom unzuverlässigen zum robusten physischen MLQR-Datentransfer](diagramme/transfer-problem-loesung-zeitachse.svg)
+
+**Abbildung:** Vorher-Nachher-Swimlane des physischen MLQR-Transfers. Rot
+markiert den früheren Abbruchpfad, Grün die im Commit
+`faaaf05fef2db990a32615d1bb74b6f747723ad5` eingeführten
+Schutzmechanismen. Die wiederholten Chunks werden durch den Accumulator
+idempotent behandelt und deshalb nicht doppelt importiert.
+
+Die Darstellung folgt der üblichen wissenschaftlichen Praxis, eine Abbildung
+im Text anzukündigen, mit einer eigenständigen Legende zu versehen und die
+wichtigste Aussage im Fliesstext zu erklären. Farben werden nicht allein als
+Informationsträger verwendet; Linien, Überschriften und die Vorher-Nachher-
+Trennung tragen dieselbe Bedeutung. Als Gestaltungsreferenzen dienen die
+[Hinweise zu wissenschaftlichen Abbildungen von Purdue OWL](https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/apa_tables_and_figures.html)
+und die [W3C-Hinweise zu Kontrast in Texten und Grafiken](https://www.w3.org/WAI/WCAG21/understanding/non-text-contrast.html).
 
 ### Prüfung des Empfangs
 
@@ -290,12 +334,16 @@ Kamera-Bibliothek nicht. Auf Gerät A die Sendeseite öffnen, auf Gerät B den
 Empfang wählen und die Kamerafreigabe bestätigen. Erwartet werden ein Livebild,
 die drei ursprünglichen Testpakete und keine importierten Gesundheitsdaten.
 Anschliessend Abbruch, verweigerte Freigabe, Hintergrundwechsel und erneuten
-Versuch prüfen. Der Hardwaretest steht noch aus.
+Versuch prüfen. Der Hardwaretest mit einem Jahresbestand wurde erfolgreich
+durchgeführt; die Übertragung kann jedoch weiterhin deutlich länger dauern als
+ein kleiner Testtransfer.
 
-Nächster Meilenstein: Messung und Verbesserung der Kamera-Lesbarkeit auf echten
-Geräten. Die digitale Jahresdatensatz-Prüfung und die sequenzielle
-Chunk-Rekonstruktion sind bereits automatisiert; der Hardwaretest mit realen
-Display- und Kameraabweichungen steht weiterhin aus.
+Nächster Meilenstein: weitere Messungen der Kamera-Lesbarkeit unter
+unterschiedlichen Display-, Licht-, Abstand- und Winkelbedingungen. Die
+digitale Jahresdatensatz-Prüfung, die sequenzielle Chunk-Rekonstruktion und die
+Übertragung zwischen physischen Geräten sind nach dem aktuellen Hardwaretest
+nachgewiesen; eine statistische Erfolgsrate über viele Gerätekombinationen ist
+noch nicht erhoben.
 
 Prüfstand Kamera-Screen: Die 32 betroffenen Encoder-, Decoder-, Empfangs-,
 Sende-, Ergebnis- und Navigationstests bestehen nach der Layoutkorrektur
