@@ -35,24 +35,21 @@ Widget harness({Widget? home}) => MaterialApp(
 );
 
 void main() {
-  test(
-    'repeats temporal chunks so missed camera frames can be recovered',
-    () async {
-      final sequence = await MlqrTransferService()
-          .encodeUnencryptedSnapshotForDevelopment(
-            TrackingSnapshot(),
-            transferId: 'repeat-test',
-            chunkSize: 5,
-          );
-      final model = TransferSendViewModel.sequence(sequence);
+  test('uses one bounded temporal recovery pass', () async {
+    final sequence = await MlqrTransferService()
+        .encodeUnencryptedSnapshotForDevelopment(
+          TrackingSnapshot(),
+          transferId: 'repeat-test',
+          chunkSize: 5,
+        );
+    final model = TransferSendViewModel.sequence(sequence);
 
-      expect(model.temporalFrameCount, greaterThan(sequence.chunkCount));
-      expect(
-        model.temporalFrameCount,
-        sequence.temporalFrames.length * TransferSendViewModel.temporalRounds,
-      );
-    },
-  );
+    expect(model.temporalFrameCount, sequence.chunkCount);
+    expect(
+      model.temporalFrameCount,
+      sequence.temporalFrames.length * TransferSendViewModel.temporalRounds,
+    );
+  });
 
   testWidgets('Send opens an actual MLQR preview; both exit actions return', (
     tester,

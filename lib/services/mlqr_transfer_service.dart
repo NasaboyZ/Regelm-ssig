@@ -6,6 +6,9 @@ import '../models/mlqr_decoded.dart';
 import '../models/period_entry.dart';
 import 'mlqr_decoder_service.dart';
 import 'mlqr_encoder_service.dart';
+import 'go_mlqr_renderer.dart';
+import 'go_transfer_codec.dart';
+import 'mlqr_renderer.dart';
 import 'transfer_codec.dart';
 
 class MlqrTemporalFrame {
@@ -46,15 +49,22 @@ class MlqrTransferService {
     MlqrEncoderService? encoder,
     MlqrDecoderService? decoder,
     TrackingSnapshotTransferCodec? payloadCodec,
+    MlqrRenderer? renderer,
     this.targetQrVersion = 10,
     this.maxPayloadLayersPerCode = 7,
   }) : encoder = encoder ?? const MlqrEncoderService(),
        decoder = decoder ?? const MlqrDecoderService(),
-       payloadCodec = payloadCodec ?? TrackingSnapshotTransferCodec();
+       payloadCodec =
+           payloadCodec ??
+           GoTransferCodec.tryLoad() ??
+           TrackingSnapshotTransferCodec(),
+       renderer =
+           renderer ?? GoMlqrRenderer.tryLoad() ?? const DartMlqrRenderer();
 
   final MlqrEncoderService encoder;
   final MlqrDecoderService decoder;
   final TrackingSnapshotTransferCodec payloadCodec;
+  final MlqrRenderer renderer;
   final int targetQrVersion;
   final int maxPayloadLayersPerCode;
 
@@ -142,30 +152,45 @@ class MlqrTransferService {
     }
     final codes = <MlqrCode>[];
     final temporalFrames = <MlqrTemporalFrame>[];
+    final packets = package.chunks.map((chunk) => chunk.toBytes()).toList();
+    final rendered = <MlqrCode>[];
     for (
       var offset = 0;
-      offset < package.chunks.length;
+      offset < packets.length;
       offset += maxPayloadLayersPerCode
     ) {
-      final end = (offset + maxPayloadLayersPerCode).clamp(
-        0,
-        package.chunks.length,
+      final end = (offset + maxPayloadLayersPerCode).clamp(0, packets.length);
+      rendered.addAll(
+        renderer.render(
+          packets.sublist(offset, end),
+          maxLayersPerCode: maxPayloadLayersPerCode,
+        ),
       );
-      final code = encoder.encode(
-        package.chunks
-            .sublist(offset, end)
-            .map((chunk) => chunk.toBytes())
-            .toList(),
-      );
-      codes.add(code);
-      for (final layer in code.layers) {
-        if (layer.isDummy) continue;
-        temporalFrames.add(
-          MlqrTemporalFrame(
-            raster: _temporalRaster(layer.matrix),
-            chunkIndex: offset + layer.payloadIndex!,
-          ),
+    }
+    codes.addAll(rendered);
+    if (renderer.supportsTemporalFallback) {
+      for (
+        var offset = 0;
+        offset < package.chunks.length;
+        offset += maxPayloadLayersPerCode
+      ) {
+        final end = (offset + maxPayloadLayersPerCode).clamp(
+          0,
+          package.chunks.length,
         );
+        final group = package.chunks.sublist(offset, end);
+        final code = encoder.encode(
+          group.map((chunk) => chunk.toBytes()).toList(),
+        );
+        for (final layer in code.layers) {
+          if (layer.isDummy) continue;
+          temporalFrames.add(
+            MlqrTemporalFrame(
+              raster: _temporalRaster(layer.matrix),
+              chunkIndex: offset + layer.payloadIndex!,
+            ),
+          );
+        }
       }
     }
     return MlqrTransferSequence(

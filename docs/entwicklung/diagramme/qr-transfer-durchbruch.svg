@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="620" viewBox="0 0 1400 620" role="img" aria-labelledby="title desc">
+  <title id="title">MLQR-Transfer vorher und nachher</title>
+  <desc id="desc">Vorher drei temporale Wiederholungen bei drei Sekunden, nachher ein Recovery-Pass bei 1,5 Sekunden.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; fill: #172B3A; }
+    .title { font-size: 28px; font-weight: 700; }
+    .label { font-size: 22px; font-weight: 700; }
+    .body { font-size: 20px; }
+    .small { font-size: 17px; }
+  </style>
+  <rect width="1400" height="620" fill="#fff"/>
+  <text x="700" y="48" text-anchor="middle" class="title">MLQR-Transfer: kompakter Recovery-Pass</text>
+  <rect x="45" y="85" width="610" height="390" rx="18" fill="#FCE7E7" stroke="#C47D83" stroke-width="2"/>
+  <rect x="745" y="85" width="610" height="390" rx="18" fill="#E8F4E5" stroke="#7EAA78" stroke-width="2"/>
+  <text x="350" y="130" text-anchor="middle" class="label">Vorher: Wiederholung</text>
+  <text x="1050" y="130" text-anchor="middle" class="label">Nachher: Recovery-Pass</text>
+  <rect x="85" y="185" width="230" height="92" rx="12" fill="#D1DFF6"/>
+  <text x="200" y="220" text-anchor="middle" class="body">MLQR</text>
+  <text x="200" y="250" text-anchor="middle" class="body">L Frames</text>
+  <rect x="385" y="185" width="230" height="92" rx="12" fill="#F4D1D2"/>
+  <text x="500" y="220" text-anchor="middle" class="body">Temporal</text>
+  <text x="500" y="250" text-anchor="middle" class="body">C × 3 Runden</text>
+  <line x1="315" y1="231" x2="385" y2="231" stroke="#52616D" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="350" y="310" text-anchor="middle" class="body">3 s / Frame</text>
+  <text x="350" y="370" text-anchor="middle" class="small">Viele Duplikate und lange</text>
+  <text x="350" y="396" text-anchor="middle" class="small">Kamera-Wartezeit</text>
+  <rect x="785" y="185" width="230" height="92" rx="12" fill="#D1DFF6"/>
+  <text x="900" y="220" text-anchor="middle" class="body">MLQR</text>
+  <text x="900" y="250" text-anchor="middle" class="body">L Frames</text>
+  <rect x="1085" y="185" width="230" height="92" rx="12" fill="#DCEBCF"/>
+  <text x="1200" y="220" text-anchor="middle" class="body">Temporal</text>
+  <text x="1200" y="250" text-anchor="middle" class="body">C × 1 Runde</text>
+  <line x1="1015" y1="231" x2="1085" y2="231" stroke="#52616D" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1050" y="310" text-anchor="middle" class="body">1,5 s / Frame</text>
+  <text x="1050" y="370" text-anchor="middle" class="small">Ein Pass im Normalfall;</text>
+  <text x="1050" y="396" text-anchor="middle" class="small">Duplikate bleiben idempotent</text>
+  <rect x="245" y="515" width="910" height="62" rx="14" fill="#FFF2D9" stroke="#C59B42" stroke-width="2"/>
+  <text x="700" y="542" text-anchor="middle" class="small">Beobachteter Gewinn: Sequenzplanung. Go ist optional vorbereitet,</text>
+  <text x="700" y="565" text-anchor="middle" class="small">aber als Ursache auf mobilen Plattformen noch nicht verifiziert.</text>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#52616D"/></marker>
+  </defs>
+</svg>

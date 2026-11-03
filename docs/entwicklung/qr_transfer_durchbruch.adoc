@@ -1,0 +1,111 @@
+= MLQR-Transfer: Durchbruch bei der Übertragungszeit
+:lang: de
+:toc:
+:toc-title: Auf dieser Seite
+:toclevels: 1
+:imagesdir: diagramme
+
+Diese Seite dokumentiert die aktuelle Transferoptimierung für einen
+Jahresbestand zyklischer Daten. Die fachliche Erkenntnis steht in
+link:../erkenntnisse/007_mlqr_transfer_durchbruch.md[Erkenntnis 007].
+
+== Die Änderung in einem Satz
+
+Die Sendesequenz zeigt die MLQR-Codes weiterhin kompakt und verwendet danach
+nur noch einen temporalen Recovery-Pass. Dadurch werden unnötige vollständige
+Wiederholungen aus dem optischen Kanal entfernt.
+
+== Vorher und nachher
+
+ifdef::render-diagrams[]
+[plantuml,qr-transfer-durchbruch,svg]
+----
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 18
+skinparam defaultFontColor #172B3A
+skinparam ArrowColor #52616D
+skinparam ArrowThickness 1.5
+skinparam roundcorner 18
+skinparam packageStyle rectangle
+skinparam packageBorderColor #83909A
+skinparam packageFontColor #172B3A
+skinparam noteBackgroundColor #FFF2D9
+skinparam noteBorderColor #C59B42
+left to right direction
+
+package "Vorher: Sicherheitsmarge durch Wiederholung" #FCE7E7 {
+  rectangle "MLQR-Sequenzen\nL Frames" as oldL #D1DFF6
+  rectangle "temporale Frames\nC Frames × 3 Runden" as oldC #F4D1D2
+  oldL --> oldC : Anzeigeintervall 3 s
+  note right of oldC
+    Kamera scannt drei vollständige
+    temporale Durchläufe.
+    Viele Duplikate, lange Wartezeit.
+  end note
+}
+
+package "Nachher: kompakter Recovery-Pass" #E8F4E5 {
+  rectangle "MLQR-Sequenzen\nL Frames" as newL #D1DFF6
+  rectangle "temporale Frames\nC Frames × 1 Runde" as newC #DCEBCF
+  newL --> newC : Anzeigeintervall 1,5 s
+  note right of newC
+    Ein Recovery-Pass reicht im
+    Normalfall. Der Accumulator
+    behandelt Duplikate idempotent.
+  end note
+}
+
+oldC ..> newC : weniger Frames
+
+note bottom
+  Ursache des beobachteten Gewinns: Sequenzplanung.
+  Go ist optional geladen und als Beschleuniger vorbereitet,
+  aber für diese Beobachtung auf mobilen Plattformen noch nicht belegt.
+end note
+@enduml
+----
+endif::[]
+ifndef::render-diagrams[]
+image::qr-transfer-durchbruch.svg[Vorher-Nachher-Grafik der MLQR-Transfersequenz]
+endif::[]
+
+== Laufzeitmodell
+
+Mit `L` MLQR-Sequenzen, `C` temporalen Frames und dem Anzeigeintervall `t`
+ergibt sich als grobe Modellierung:
+
+[source,text]
+----
+vorher = (L + 3C) * 3,0 s
+nachher = (L + C) * 1,5 s
+----
+
+Das Modell erklärt einen grossen Gewinn, ist aber keine Messung der gesamten
+Übertragung. Kamera-Fokus, verlorene Frames, erneute Versuche, Dekodierung,
+Dekompression und Datenbank-Commit müssen separat gemessen werden.
+
+== Zuständigkeiten der Architektur
+
+* `TransferCodec` serialisiert, komprimiert, verschlüsselt und zerlegt die
+  Daten in validierte Chunks.
+* `MlqrTransferService` verbindet Payload-Codec und MLQR-Darstellung.
+* `TransferSendViewModel` plant die sichtbaren Frames und den Anzeigezyklus.
+* Die View rendert und steuert nur den visuellen Ablauf.
+* `TransferChunkAccumulator` nimmt Chunks reihenfolgeunabhängig an und
+  ignoriert identische Wiederholungen.
+* Go bleibt hinter einer schmalen optionalen Schnittstelle. Ohne gebundeltes
+  natives Artefakt wird der Dart-Implementierung vertraut.
+
+Damit bleibt die MVVM-Struktur erhalten: Die View kennt keine Verschlüsselungs-
+oder Chunking-Details, und die Transferengine kennt keine Widgets.
+
+== Offene Messung
+
+Die Aussage „30-mal schneller“ wird als Nutzerbeobachtung geführt, nicht als
+Benchmark. Für eine belastbare Zahl sind identische Daten, identische Geräte
+und mehrere Wiederholungen erforderlich. Besonders wichtig ist der getrennte
+Vergleich zwischen Go-Artefakt und Dart-Fallback, damit die Ursache des
+Gewinns nicht falsch zugeordnet wird.

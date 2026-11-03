@@ -21,6 +21,8 @@ kopiert und anhand der tatsächlichen Beobachtung ausgefüllt.
 - [003: SQLCipher-Speicherung und aktuelle Daten in TablePlus](003_sqlcipher_speicherung_und_tableplus.md)
 - [004: Verschlüsselungsprüfung an echter Flutter-Datenbank und sqlmap-Labor](004_verschluesselungspruefung.md)
 - [005: iPhone-Erkenntnisse zu Bedienbarkeit und Design](005_iphone_bedienbarkeit_und_design.md)
+- [006: Aktueller Stand des MLQR-Transferproblems](006_transferproblem_aktueller_stand.md)
+- [007: MLQR-Transfer-Durchbruch durch kompaktere Sequenz](007_mlqr_transfer_durchbruch.md)
 
 ## Vorlage
 
