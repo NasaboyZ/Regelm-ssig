@@ -19,6 +19,16 @@ class MlqrTemporalFrame {
   final int chunkIndex;
 }
 
+/// Controls how many logical transfer chunks are placed in one MLQR image.
+enum MlqrTransferProfile {
+  compact(7),
+  singleDataLayer(1);
+
+  const MlqrTransferProfile(this.maxPayloadLayers);
+
+  final int maxPayloadLayers;
+}
+
 class MlqrTransferSequence {
   const MlqrTransferSequence({
     required this.codes,
@@ -52,7 +62,8 @@ class MlqrTransferService {
     TrackingSnapshotTransferCodec? payloadCodec,
     MlqrRenderer? renderer,
     this.targetQrVersion = 10,
-    this.maxPayloadLayersPerCode = 7,
+    MlqrTransferProfile profile = MlqrTransferProfile.compact,
+    int? maxPayloadLayersPerCode,
   }) : encoder = encoder ?? const MlqrEncoderService(),
        decoder = decoder ?? const MlqrDecoderService(),
        payloadCodec =
@@ -60,13 +71,17 @@ class MlqrTransferService {
            GoTransferCodec.tryLoad() ??
            TrackingSnapshotTransferCodec(),
        renderer =
-           renderer ?? GoMlqrRenderer.tryLoad() ?? const DartMlqrRenderer();
+           renderer ?? GoMlqrRenderer.tryLoad() ?? const DartMlqrRenderer(),
+       profile = profile,
+       maxPayloadLayersPerCode =
+           maxPayloadLayersPerCode ?? profile.maxPayloadLayers;
 
   final MlqrEncoderService encoder;
   final MlqrDecoderService decoder;
   final TrackingSnapshotTransferCodec payloadCodec;
   final MlqrRenderer renderer;
   final int targetQrVersion;
+  final MlqrTransferProfile profile;
   final int maxPayloadLayersPerCode;
 
   Future<MlqrTransferSequence> encodeEncryptedSnapshot(

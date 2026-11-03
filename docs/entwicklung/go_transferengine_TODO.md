@@ -55,7 +55,46 @@ mlqr.render duration_ms=71 packets=8 sequences=2 max_layers=5 success=true
 - [ ] Chunk-Anzahl, MLQR-Sequenzen und sichtbare Frames getrennt messen.
 - [ ] Ziel: normaler Transfer unter zwei Minuten.
 - [ ] 3-, 4-, 5- und 7-Layer-Profile mit echten Kameras vergleichen.
+- [x] Robustes 1-Datenebenen-Profil als optische Fallback-Strategie in der
+      Transfer-API implementieren.
+- [ ] 1-Datenebenen-Profil mit echten Geräten prüfen.
+- [x] Für das 1-Datenebenen-Profil bestätigen, dass dieselben logischen
+      Transfer-Chunks verwendet werden; nur die Gruppierung in MLQR-Codes
+      darf sich ändern.
+- [ ] Anzeigezeit und Erfolgsquote für 1, 3, 5 und 7 Datenebenen getrennt
+      erfassen; „weniger Layer“ darf nicht mit „weniger Daten“ verwechselt
+      werden.
 - [ ] Temporale Recovery nur begrenzt und nicht pauschal dreifach abspielen.
+
+### Optisches Profil mit einer Datenebene
+
+Der Plan bleibt trotz der aktuellen Erkenntnis vollständig verfolgbar. Eine
+MLQR-Datenebene kann weiterhin genau einen vollständigen Transfer-Chunk
+enthalten. Mit `maxPayloadLayersPerCode = 1` wird also nicht weniger Payload
+übertragen und es werden auch keine Chunks verworfen; es entstehen lediglich
+mehr einzelne MLQR-Bilder. Die logische Chunk-Anzahl, Verschlüsselung,
+Reihenfolge und der Empfänger bleiben unverändert.
+
+Das ist ein Robustheitsprofil für schwierige Kamerasituationen, kein Ersatz
+für das kompakte Mehr-Ebenen-Profil. „Eine Datenebene“ bedeutet dabei einen
+Nutzdaten-QR pro MLQR-Code. Die Darstellung kann weiterhin Dummy-Ebenen für
+die definierte MLQR-Geometrie enthalten; „nur eine optische Ebene insgesamt“
+wäre dagegen ein temporaler Schwarzweiss-QR-Transfer und kein MLQR-Profil.
+
+Die Umsetzung sollte deshalb in dieser Reihenfolge erfolgen:
+
+1. Profilkonfiguration zentral machen (`1`, `3`, `5`, `7` Datenebenen).
+2. Für jedes Profil dieselben Chunks und denselben Decoder-Roundtrip testen.
+3. Anzeigezeit, verlorene Frames, erfolgreiche Transfers und Peak-Speicher
+   auf realen Android- und iOS-Geräten messen.
+4. Das Profil abhängig von QR-Version, Chunk-Grösse und Kameratest wählen;
+   nicht pauschal alle Transfers auf eine Ebene umstellen.
+
+Die vorhandene `MlqrTransferService` besitzt mit `MlqrTransferProfile` jetzt
+eine benannte Profilwahl. `singleDataLayer` verwendet intern weiterhin die
+einmalig erzeugte Chunk-Liste aus `GoTransferCodec` und verändert nur deren
+Gruppierung in MLQR-Codes. Offen sind vor allem die sichtbare Profilwahl und
+die Hardwaremessung.
 
 ## Tests
 

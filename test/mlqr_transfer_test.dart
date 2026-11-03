@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/services/mlqr_decoder_service.dart';
@@ -51,6 +52,51 @@ void main() {
         chunkSize: 5,
       );
       expect(sequence.codes.every((code) => code.payloadCount <= 15), isTrue);
+    },
+  );
+
+  test(
+    'single-data-layer profile keeps the same chunks and round-trips',
+    () async {
+      final singleLayerTransfer = MlqrTransferService(
+        encoder: const MlqrEncoderService(),
+        decoder: const MlqrDecoderService(),
+        payloadCodec: TrackingSnapshotTransferCodec(),
+        profile: MlqrTransferProfile.singleDataLayer,
+      );
+      final compactSequence = await transfer
+          .encodeUnencryptedSnapshotForDevelopment(
+            snapshot,
+            transferId: 'single-layer-sequence',
+            chunkSize: 5,
+          );
+      final sequence = await singleLayerTransfer
+          .encodeUnencryptedSnapshotForDevelopment(
+            snapshot,
+            transferId: 'single-layer-sequence',
+            chunkSize: 5,
+          );
+
+      expect(sequence.codes, isNotEmpty);
+      expect(sequence.chunkCount, compactSequence.chunkCount);
+      for (var index = 0; index < sequence.chunkCount; index++) {
+        expect(
+          listEquals(
+            sequence.package.chunks[index].toBytes(),
+            compactSequence.package.chunks[index].toBytes(),
+          ),
+          isTrue,
+        );
+      }
+      expect(sequence.codes.every((code) => code.payloadCount == 1), isTrue);
+      expect(sequence.codes.length, sequence.chunkCount);
+      expect(sequence.temporalFrames.length, sequence.chunkCount);
+
+      final decoded = await singleLayerTransfer
+          .decodeUnencryptedSnapshotFromMlqrCodesForDevelopment(
+            sequence.codes.reversed.toList(),
+          );
+      expect(decoded.toJson(), snapshot.toJson());
     },
   );
 
