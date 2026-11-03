@@ -279,6 +279,12 @@ dreifache Anzeige führt daher nicht zu mehrfach importierten Daten.
 
 ### Ergebnis des Hardwaretests
 
+Die anschliessende Optimierung der Anzeigeplanung ist in der separaten
+[Vorher-Nachher-Dokumentation zum MLQR-Transfer](qr_transfer_durchbruch.adoc)
+festgehalten. Sie reduziert den temporalen Recovery-Pass von drei auf eine
+Runde; die historische Robustheitsbegründung dieses Dokuments bleibt davon
+unverändert.
+
 Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
 Geräten ist mit der Lösung aus Commit
 `faaaf05fef2db990a32615d1bb74b6f747723ad5` erfolgreich möglich. Der Transfer

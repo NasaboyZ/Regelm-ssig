@@ -16,7 +16,9 @@ class TransferDisplayFrame {
 
 /// Preview model or a sequence of real transfer images.
 class TransferSendViewModel {
-  static const temporalRounds = 3;
+  /// One recovery pass is enough for the normal path. A future adaptive
+  /// profile can add another pass only for sequences that need recovery.
+  static const temporalRounds = 1;
 
   TransferSendViewModel.preview({
     MlqrEncoderService encoder = const MlqrEncoderService(),
@@ -45,7 +47,7 @@ class TransferSendViewModel {
     : codes = sequence.codes,
       isPreview = false,
       transferSequence = sequence,
-      codeInterval = const Duration(seconds: 3) {
+      codeInterval = const Duration(milliseconds: 1500) {
     frames = [
       for (final code in sequence.codes)
         TransferDisplayFrame(

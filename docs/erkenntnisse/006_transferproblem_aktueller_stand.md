@@ -14,6 +14,11 @@
 > bleibt unten erhalten; Aussagen über einen noch offenen Hardwaretest sind
 > als früherer Zwischenstand zu verstehen.
 
+> **Weiterführende Erkenntnis:** Die anschliessende Reduktion von drei auf
+> einen temporalen Recovery-Pass und das kürzere Anzeigeintervall haben den
+> praktischen Transfer deutlich beschleunigt. Die Mess- und Architekturgrenzen
+> dieser Optimierung stehen in [Erkenntnis 007](007_mlqr_transfer_durchbruch.md).
+
 ## Kurzfassung
 
 Die Übertragung scheitert nach aktuellem Stand hauptsächlich an der **robusten optischen Erkennung des farbigen Multi-Layer-QR-Codes durch eine reale Kamera**.
