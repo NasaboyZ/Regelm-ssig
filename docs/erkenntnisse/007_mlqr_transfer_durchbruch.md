@@ -9,7 +9,7 @@
 Die Übertragung eines Jahres zyklischer Daten zwischen zwei physischen
 Geräten funktioniert mit der aktuellen MLQR-/temporalen Transfersequenz. Im
 praktischen Test fühlt sich der Transfer ungefähr 30-mal schneller an als
-zuvor. Diese Zahl ist eine subjektive Beobachtung und noch keine reproduzierte
+zuvor. Diese Zahl ist eine subjektive Beobachtung und keine reproduzierte
 Benchmark-Messung.
 
 Die relevante Änderung liegt in der Sendesequenz:
@@ -25,11 +25,26 @@ Damit muss die Kamera nicht mehr drei vollständige temporale Durchläufe
 scannen. Die grobe Frame-Anzahl sinkt von `L + 3C` auf `L + C`, wobei `L` die
 MLQR-Sequenzen und `C` die temporalen Frames bezeichnet.
 
+Für das vorhandene Jahres-Testfixture entstehen 1 MLQR-Bild und 7 temporale
+Frames. Die reine Anzeigezeit beträgt damit rechnerisch:
+
+```text
+alt:  (1 + 3 × 7) × 3,0 s = 66 s
+neu:  (1 + 1 × 7) × 1,5 s = 12 s
+```
+
+Das sind Anzeigezeiten für einen vollständigen Durchlauf, nicht automatisch
+die gesamte Kamera-zu-Datenbank-Zeit. Die Flutter-Entwicklungsansicht zeigt
+die aktuelle berechnete Anzeigezeit an. Zusätzlich werden unter
+`flutter run`/Device Hub die Ereignisse `transfer.encode`,
+`transfer.display_ready`, `transfer.receive_started` und
+`transfer.receive_finished` ausgegeben.
+
 ## Erkenntnis
 
 Der wesentliche Geschwindigkeitsgewinn stammt aus der Reduktion unnötiger
 Wiederholungen im optischen Kanal, nicht aus einer bereits nachgewiesenen
-Go-Ausführung. Das Go-Backend ist in Flutter optional angebunden:
+Go-Ausführung. Die lokale Go-Engine ist in Flutter optional angebunden:
 `GoTransferCodec.tryLoad()` und `GoMlqrRenderer.tryLoad()` fallen auf Dart
 zurück, wenn kein natives Plattformartefakt geladen werden kann. Für die
 aktuelle mobile Ausführung ist daher nicht belegt, dass Go die beobachtete
@@ -65,9 +80,9 @@ Die Architekturentscheidung lautet deshalb:
 ## Auswirkung auf das Projekt
 
 Die aktuelle Lösung erreicht das Ziel eines deutlich kürzeren optischen
-Transfers, ohne die Kamerarobustheit vollständig aufzugeben. Als nächster
-Schritt braucht es einen reproduzierbaren Benchmark auf mindestens einem
-Sender-/Empfänger-Paar:
+Transfers, ohne die Kamerarobustheit vollständig aufzugeben. Die
+Messinstrumentierung ist vorhanden. Als nächster Schritt braucht es einen
+reproduzierbaren Benchmark auf mindestens einem Sender-/Empfänger-Paar:
 
 - gleiche Jahresdaten und gleiche Chunk-Grösse,
 - Messung von Encoding, Anzeigezeit, erkannter Chunk-Rate und Commit-Zeit,

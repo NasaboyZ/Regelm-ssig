@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import '../models/mlqr_code.dart';
 import '../services/mlqr_encoder_service.dart';
 import '../services/mlqr_transfer_service.dart';
+import '../services/transfer_diagnostics.dart';
 
 enum TransferDisplayMode { layered, temporal }
 
@@ -86,6 +87,12 @@ class TransferSendViewModel {
   int get temporalFrameCount => frames
       .where((frame) => frame.mode == TransferDisplayMode.temporal)
       .length;
+  Duration get displayDuration => codeInterval * codeCount;
+  String get timingProfile =>
+      codeInterval == TransferTimingProfile.current.frameInterval &&
+          temporalRounds == TransferTimingProfile.current.temporalRounds
+      ? TransferTimingProfile.current.name
+      : 'custom';
   TransferDisplayFrame frameAt(int index) => frames[index];
   bool isTemporalAt(int index) =>
       frameAt(index).mode == TransferDisplayMode.temporal;

@@ -185,14 +185,21 @@ zu keinem Erfolg; Standard-QR ohne Referenzbalken wird nicht akzeptiert.
 
 ### Robustheit der physischen Geräteübertragung
 
+Die folgende Beschreibung enthält den historischen Stand mit drei temporalen
+Runden. Die aktuelle Sendesequenz verwendet im Normalfall nur noch eine Runde;
+die genaue Vorher-Nachher-Rechnung steht in
+[qr_transfer_durchbruch.adoc](qr_transfer_durchbruch.adoc).
+
 Die erfolgreiche Übertragung eines Jahresbestands zwischen physischen Geräten
 beruht nicht nur auf der verlängerten Scanzeit. Die im Commit
 `faaaf05fef2db990a32615d1bb74b6f747723ad5` eingeführte Lösung kombiniert
 mehrere Sicherungen:
 
-- **Wiederholung der temporalen Daten:** Die vollständige temporale QR-Sequenz
-  wird drei Mal angezeigt. Verlorene oder zu spät dekodierte Kameraframes
-  können dadurch in einer späteren Runde erneut gelesen werden.
+- **Wiederholung der temporalen Daten (historisch):** Die vollständige
+  temporale QR-Sequenz wurde drei Mal angezeigt. Verlorene oder zu spät
+  dekodierte Kameraframes konnten dadurch in einer späteren Runde erneut
+  gelesen werden. Diese Sicherheitsmarge ist heute auf einen Recovery-Pass
+  reduziert.
 - **Fortschrittsbasierter Timeout:** Nach jedem neu akzeptierten Chunk wird der
   Timeout neu gestartet. Die Übertragung läuft weiter, solange tatsächlich
   Fortschritt eintrifft.
@@ -266,16 +273,17 @@ zu dekodieren. Die Chunk-Metadaten bleiben unverändert; `transferId`, `index`
 und `total` ordnen die Layer wieder der Transfersession zu.
 
 Der Sender zeigt zunächst die farbigen MLQR-Codes und anschliessend die
-temporalen Layer. Diese komplette Sequenz wird standardmässig drei Mal
-gesendet. Dadurch können einzelne verlorene Kameraframes nachgeholt werden,
-ohne einen Rückkanal zwischen den Geräten einzuführen. Die Methode ist
-langsamer, vermeidet aber die engen RGB-Abstände der 15-Layer-Darstellung und
-kann auch mit einem gewöhnlichen Schwarzweiss-QR-Reader grundsätzlich erkannt
-werden.
+temporalen Layer. Historisch wurde diese komplette Sequenz standardmässig drei
+Mal gesendet. Die aktuelle Version sendet im Normalfall einen Recovery-Pass;
+ein adaptives Profil für schwierige Kamerabedingungen bleibt eine spätere
+Option. Die Methode vermeidet die engen RGB-Abstände der 15-Layer-Darstellung
+und kann auch mit einem gewöhnlichen Schwarzweiss-QR-Reader grundsätzlich
+erkannt werden.
 
 Jeder erkannte Chunk setzt beim Empfänger den laufenden Scan-Timeout zurück.
-Duplikate werden vom `TransferChunkAccumulator` idempotent behandelt; die
-dreifache Anzeige führt daher nicht zu mehrfach importierten Daten.
+Duplikate werden vom `TransferChunkAccumulator` idempotent behandelt; auch
+eine spätere zusätzliche Recovery-Runde würde daher nicht zu mehrfach
+importierten Daten führen.
 
 ### Ergebnis des Hardwaretests
 
@@ -289,9 +297,10 @@ Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
 Geräten ist mit der Lösung aus Commit
 `faaaf05fef2db990a32615d1bb74b6f747723ad5` erfolgreich möglich. Der Transfer
 kann länger dauern als ein kleiner Testtransfer, bleibt aber aktiv, solange
-neue Chunks eintreffen. Die temporale Sequenz wird mehrfach angezeigt und
-fehlende Kameraframes können dadurch nachgeholt werden. Wiederholte Chunks
-werden nur für den Fortschritt berücksichtigt und nicht nochmals importiert.
+neue Chunks eintreffen. Die temporale Sequenz wird im Normalfall einmal als
+Recovery-Pass angezeigt; fehlende Kameraframes können innerhalb dieses Passes
+nachgeholt werden. Wiederholte Chunks werden nur für den Fortschritt
+berücksichtigt und nicht nochmals importiert.
 
 Für die Fehlersuche sind weiterhin die empfangene Chunk-Anzahl und die
 erwartete Chunk-Anzahl massgeblich. Ein vollständiger Erfolg wird erst nach

@@ -10,6 +10,7 @@ import 'go_mlqr_renderer.dart';
 import 'go_transfer_codec.dart';
 import 'mlqr_renderer.dart';
 import 'transfer_codec.dart';
+import 'transfer_diagnostics.dart';
 
 class MlqrTemporalFrame {
   const MlqrTemporalFrame({required this.raster, required this.chunkIndex});
@@ -76,13 +77,26 @@ class MlqrTransferService {
   }) async {
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: true);
+    final stopwatch = Stopwatch()..start();
     final package = await payloadCodec.encodeEncryptedSnapshot(
       snapshot,
       passphrase: passphrase,
       transferId: transferId,
       chunkSize: effectiveChunkSize,
     );
-    return _encodePackage(package);
+    final sequence = _encodePackage(package);
+    stopwatch.stop();
+    TransferDiagnostics.event('encode', {
+      'profile': TransferTimingProfile.current.name,
+      'duration_ms': stopwatch.elapsedMilliseconds,
+      'chunks': sequence.chunkCount,
+      'mlqr_frames': sequence.codeCount,
+      'temporal_frames': sequence.temporalFrames.length,
+      'codec': payloadCodec.runtimeType,
+      'renderer': renderer.runtimeType,
+      'encrypted': true,
+    });
+    return sequence;
   }
 
   Future<MlqrTransferSequence> encodeUnencryptedSnapshotForDevelopment(
@@ -92,12 +106,25 @@ class MlqrTransferService {
   }) async {
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: false);
+    final stopwatch = Stopwatch()..start();
     final package = await payloadCodec.encodeUnencryptedSnapshotForDevelopment(
       snapshot,
       transferId: transferId,
       chunkSize: effectiveChunkSize,
     );
-    return _encodePackage(package);
+    final sequence = _encodePackage(package);
+    stopwatch.stop();
+    TransferDiagnostics.event('encode', {
+      'profile': TransferTimingProfile.current.name,
+      'duration_ms': stopwatch.elapsedMilliseconds,
+      'chunks': sequence.chunkCount,
+      'mlqr_frames': sequence.codeCount,
+      'temporal_frames': sequence.temporalFrames.length,
+      'codec': payloadCodec.runtimeType,
+      'renderer': renderer.runtimeType,
+      'encrypted': false,
+    });
+    return sequence;
   }
 
   int _recommendedChunkSize(String transferId, {required bool encrypted}) {

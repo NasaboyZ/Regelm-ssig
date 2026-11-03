@@ -12,6 +12,7 @@ import '../services/mlqr_camera_source.dart';
 import '../services/mlqr_decoder_service.dart';
 import '../services/mlqr_transfer_service.dart';
 import '../services/transfer_codec.dart';
+import '../services/transfer_diagnostics.dart';
 
 /// Null is an expected unreadable frame while the camera is being aimed.
 Future<MlqrDecoded?> decodeCameraFrame(MlqrCameraFrame frame) =>
@@ -57,6 +58,7 @@ class TransferReceiveViewModel extends ChangeNotifier {
   bool _busy = false;
   final _chunks = TransferChunkAccumulator();
   bool _sessionStarted = false;
+  Stopwatch? _scanStopwatch;
   bool initializing = true;
   bool paused = false;
   double zoom = 1;
@@ -78,6 +80,8 @@ class TransferReceiveViewModel extends ChangeNotifier {
     if (!_sessionStarted) {
       _chunks.clear();
       _sessionStarted = true;
+      _scanStopwatch = Stopwatch()..start();
+      TransferDiagnostics.event('receive_started', {});
     }
     paused = false;
     initializing = true;
@@ -212,6 +216,13 @@ class TransferReceiveViewModel extends ChangeNotifier {
   void _finish(TransferResult value, int epoch) {
     if (_disposed || epoch != _epoch || result != null) return;
     result = value;
+    _scanStopwatch?.stop();
+    TransferDiagnostics.event('receive_finished', {
+      'duration_ms': _scanStopwatch?.elapsedMilliseconds,
+      'result': value.runtimeType,
+      'received_chunks': receivedChunkCount,
+      'expected_chunks': expectedChunkCount,
+    });
     _epoch++;
     _timer?.cancel();
     _stop();

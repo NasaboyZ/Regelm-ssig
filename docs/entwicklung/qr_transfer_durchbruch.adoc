@@ -44,6 +44,7 @@ package "Vorher: Sicherheitsmarge durch Wiederholung" #FCE7E7 {
     Kamera scannt drei vollständige
     temporale Durchläufe.
     Viele Duplikate, lange Wartezeit.
+    Beispiel mit 1 + 7 Frames: 66 s.
   end note
 }
 
@@ -55,6 +56,7 @@ package "Nachher: kompakter Recovery-Pass" #E8F4E5 {
     Ein Recovery-Pass reicht im
     Normalfall. Der Accumulator
     behandelt Duplikate idempotent.
+    Beispiel mit 1 + 7 Frames: 12 s.
   end note
 }
 
@@ -86,6 +88,79 @@ nachher = (L + C) * 1,5 s
 Das Modell erklärt einen grossen Gewinn, ist aber keine Messung der gesamten
 Übertragung. Kamera-Fokus, verlorene Frames, erneute Versuche, Dekodierung,
 Dekompression und Datenbank-Commit müssen separat gemessen werden.
+
+== Beispiel mit dem Jahres-Testfixture
+
+Das vorhandene Jahres-Testfixture erzeugt 1 MLQR-Bild und 7 temporale Frames.
+Damit ist die sichtbare Zeit für einen vollständigen Durchlauf:
+
+[cols="1,1,1", options="header"]
+|===
+| Profil | Rechnung | Anzeigezeit
+
+| Alt
+| `(1 + 3 × 7) × 3,0 s`
+| **66 s**
+
+| Neu
+| `(1 + 1 × 7) × 1,5 s`
+| **12 s**
+|===
+
+Die 12 Sekunden sind eine nachvollziehbare Testfixture-Rechnung. Ein echter
+Datensatz kann mehr oder weniger Chunks erzeugen. Die komplette Übertragung
+auf Geräten kann zusätzlich Kameraerkennung, Wiederholungen, Dekodierung und
+SQLite-Commit enthalten.
+
+== Was bedeutet Backend?
+
+Ein Backend ist normalerweise ein entfernter Dienst, zum Beispiel ein Server
+mit HTTP-API, Datenbank und Netzwerkverbindung. Das ist hier nicht gemeint.
+
+Die Go-Komponente ist eine **lokale, eingebettete Transferengine**:
+
+* Sie läuft im selben Prozess beziehungsweise auf demselben Gerät wie Flutter.
+* Flutter übergibt Daten direkt im Arbeitsspeicher über FFI.
+* Go öffnet keine Verbindung nach aussen und besitzt keine eigene Datenbank.
+* Die SQLCipher-Datenbank bleibt vollständig unter der Kontrolle von Flutter.
+* Nach der Berechnung gibt Go Chunks oder Bildraster direkt an Flutter zurück.
+
+Go ist hier deshalb eher mit einer lokalen nativen Bibliothek vergleichbar als
+mit einem Server-Backend.
+
+== Warum kann Go schneller sein?
+
+Go wird vor der Ausführung zu nativen Maschineninstruktionen kompiliert. Bei
+CPU-intensiven Aufgaben wie Kompression, Verschlüsselung, Chunking und
+MLQR-Rastererzeugung kann das Vorteile haben:
+
+* weniger Interpreter-/Framework-Overhead,
+* effizientere Verarbeitung grosser Bytefolgen,
+* kontrollierbarer Speicherzugriff,
+* einfache parallele oder nebenläufige Verarbeitung, falls sie später nötig
+  wird.
+
+Das ist ein möglicher Vorteil, aber keine automatische Garantie. In der
+aktuellen App wird Go nur verwendet, wenn das native Plattformartefakt
+geladen werden kann. Andernfalls verwendet Flutter den Dart-Fallback. Die
+aktuelle grosse Beschleunigung ist deshalb zunächst der Sequenzoptimierung
+zuzuschreiben; der separate Go-Vergleich bleibt Teil des Device-Hub-
+Benchmarks.
+
+== Messprotokoll
+
+Im Debugmodus werden nur nicht-sensitive Messdaten geloggt. Die Flutter-
+Ereignisse sind bei `flutter run` sichtbar; die zusätzlichen Go-Ereignisse
+erscheinen nur, wenn das native Go-Artefakt tatsächlich geladen wurde:
+
+* `transfer.encode`: Encoding-Dauer, Chunks, MLQR-/temporale Frames,
+  Verschlüsselungsstatus und verwendete Implementierung;
+* `transfer.display_ready`: alte und neue berechnete Anzeigezeit;
+* `transfer.receive_started` und `transfer.receive_finished`: echte
+  Kamera-/Empfangsdauer und Chunk-Zähler.
+
+Passphrasen, Transfer-IDs, Klartext-Payloads und Gesundheitsdaten werden nicht
+geloggt.
 
 == Zuständigkeiten der Architektur
 

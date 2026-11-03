@@ -114,7 +114,8 @@ class _TransferSendViewState extends State<TransferSendView> {
                   const SizedBox(height: 4),
                   Text(
                     '${viewModel.temporalFrameCount} temporale Layer als '
-                    'Fallback · jeder Layer wird mehrfach angezeigt',
+                    'Recovery-Pass · Anzeigezeit ca. '
+                    '${(viewModel.displayDuration.inMilliseconds / 1000).toStringAsFixed(1)} s',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.muted,

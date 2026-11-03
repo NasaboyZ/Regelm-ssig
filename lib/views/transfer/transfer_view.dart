@@ -8,6 +8,7 @@ import '../../viewmodels/transfer_send_view_model.dart';
 import '../../viewmodels/transfer_receive_view_model.dart';
 import '../../repositories/tracking_repository.dart';
 import '../../services/mlqr_transfer_service.dart';
+import '../../services/transfer_diagnostics.dart';
 import 'transfer_receive_view.dart';
 import '../../widgets/transfer/transfer_illustration.dart';
 import 'transfer_send_view.dart';
@@ -41,6 +42,25 @@ class TransferView extends StatelessWidget {
           repository.snapshot,
           transferId: 'transfer-${DateTime.now().microsecondsSinceEpoch}',
         );
+    TransferDiagnostics.event('display_ready', {
+      'profile': TransferTimingProfile.current.name,
+      'legacy_display_ms': TransferTimingProfile.legacy
+          .displayDuration(
+            mlqrFrames: sequence.codeCount,
+            temporalFrames: sequence.temporalFrames.length,
+          )
+          .inMilliseconds,
+      'current_display_ms': TransferTimingProfile.current
+          .displayDuration(
+            mlqrFrames: sequence.codeCount,
+            temporalFrames: sequence.temporalFrames.length,
+          )
+          .inMilliseconds,
+      'frames': sequence.codeCount + sequence.temporalFrames.length,
+      'mlqr_frames': sequence.codeCount,
+      'temporal_frames': sequence.temporalFrames.length,
+      'chunks': sequence.chunkCount,
+    });
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(

@@ -21,9 +21,9 @@
   <text x="500" y="220" text-anchor="middle" class="body">Temporal</text>
   <text x="500" y="250" text-anchor="middle" class="body">C × 3 Runden</text>
   <line x1="315" y1="231" x2="385" y2="231" stroke="#52616D" stroke-width="3" marker-end="url(#arrow)"/>
-  <text x="350" y="310" text-anchor="middle" class="body">3 s / Frame</text>
-  <text x="350" y="370" text-anchor="middle" class="small">Viele Duplikate und lange</text>
-  <text x="350" y="396" text-anchor="middle" class="small">Kamera-Wartezeit</text>
+  <text x="350" y="310" text-anchor="middle" class="body">3 s / Frame · Beispiel: 66 s</text>
+  <text x="350" y="370" text-anchor="middle" class="small">Drei Runden erzeugen viele</text>
+  <text x="350" y="396" text-anchor="middle" class="small">Duplikate und Wartezeit</text>
   <rect x="785" y="185" width="230" height="92" rx="12" fill="#D1DFF6"/>
   <text x="900" y="220" text-anchor="middle" class="body">MLQR</text>
   <text x="900" y="250" text-anchor="middle" class="body">L Frames</text>
@@ -31,8 +31,8 @@
   <text x="1200" y="220" text-anchor="middle" class="body">Temporal</text>
   <text x="1200" y="250" text-anchor="middle" class="body">C × 1 Runde</text>
   <line x1="1015" y1="231" x2="1085" y2="231" stroke="#52616D" stroke-width="3" marker-end="url(#arrow)"/>
-  <text x="1050" y="310" text-anchor="middle" class="body">1,5 s / Frame</text>
-  <text x="1050" y="370" text-anchor="middle" class="small">Ein Pass im Normalfall;</text>
+  <text x="1050" y="310" text-anchor="middle" class="body">1,5 s / Frame · Beispiel: 12 s</text>
+  <text x="1050" y="370" text-anchor="middle" class="small">Ein Recovery-Pass im Normalfall;</text>
   <text x="1050" y="396" text-anchor="middle" class="small">Duplikate bleiben idempotent</text>
   <rect x="245" y="515" width="910" height="62" rx="14" fill="#FFF2D9" stroke="#C59B42" stroke-width="2"/>
   <text x="700" y="542" text-anchor="middle" class="small">Beobachteter Gewinn: Sequenzplanung. Go ist optional vorbereitet,</text>
