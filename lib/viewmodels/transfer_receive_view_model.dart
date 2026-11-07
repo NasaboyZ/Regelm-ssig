@@ -24,11 +24,7 @@ MlqrDecoded? _decodeFrame(MlqrCameraFrame frame) {
     try {
       return decoder.decodeImage(candidate);
     } on MlqrDecodeException {
-      try {
-        return decoder.decodeTemporalImage(candidate);
-      } on MlqrDecodeException {
-        // Continue with the next candidate or report an unreadable frame.
-      }
+      // Continue with the next MLQR candidate or report an unreadable frame.
     }
   }
   return null;
@@ -56,13 +52,15 @@ class TransferReceiveViewModel extends ChangeNotifier {
   bool _disposed = false;
   bool _busy = false;
   final _chunks = TransferChunkAccumulator();
+  final _recognitionDurations = <Duration>[];
+  Stopwatch? _scanStopwatch;
   bool _sessionStarted = false;
   bool initializing = true;
   bool paused = false;
-  double zoom = 1;
-  double minZoom = 1;
-  double maxZoom = 1;
   TransferResult? result;
+  Duration? scanDuration;
+  List<Duration> get recognitionDurations =>
+      List.unmodifiable(_recognitionDurations);
   CameraController? get camera => _source.controller;
   int get receivedChunkCount => _chunks.receivedCount;
   int? get expectedChunkCount => _chunks.expectedCount;
@@ -77,6 +75,9 @@ class TransferReceiveViewModel extends ChangeNotifier {
     final epoch = ++_epoch;
     if (!_sessionStarted) {
       _chunks.clear();
+      _recognitionDurations.clear();
+      scanDuration = null;
+      _scanStopwatch = Stopwatch()..start();
       _sessionStarted = true;
     }
     paused = false;
@@ -92,9 +93,6 @@ class TransferReceiveViewModel extends ChangeNotifier {
           return;
         }
         initializing = false;
-        minZoom = _source.minZoom;
-        maxZoom = _source.maxZoom;
-        zoom = minZoom;
         _timer?.cancel();
         _armTimeout(epoch);
         _notify();
@@ -136,23 +134,21 @@ class TransferReceiveViewModel extends ChangeNotifier {
 
   Future<void> focusAt(Offset point) => _source.focusAt(point);
 
-  Future<void> setZoom(double value) async {
-    final next = value.clamp(minZoom, maxZoom).toDouble();
-    await _source.setZoom(next);
-    zoom = next;
-    _notify();
-  }
-
   Future<void> _onFrame(MlqrCameraFrame frame, int epoch) async {
     if (_disposed || _busy || epoch != _epoch || result != null) return;
     _busy = true;
     try {
+      final recognitionStopwatch = Stopwatch()..start();
       final decoded = await _decode(frame);
       if (decoded != null) {
         if (_repository == null) {
           _finish(TransferCodeRead(decoded), epoch);
         } else {
-          await _acceptTransferCode(decoded, epoch);
+          await _acceptTransferCode(
+            decoded,
+            epoch,
+            recognitionDuration: recognitionStopwatch.elapsed,
+          );
         }
       }
     } catch (_) {
@@ -162,7 +158,11 @@ class TransferReceiveViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _acceptTransferCode(MlqrDecoded decoded, int epoch) async {
+  Future<void> _acceptTransferCode(
+    MlqrDecoded decoded,
+    int epoch, {
+    required Duration recognitionDuration,
+  }) async {
     try {
       final parsed = [
         for (final packet in decoded.packets) TransferChunk.fromBytes(packet),
@@ -178,6 +178,7 @@ class TransferReceiveViewModel extends ChangeNotifier {
       }
       final added = _chunks.acceptAll(parsed);
       if (added > 0) {
+        _recognitionDurations.add(recognitionDuration);
         _armTimeout(epoch);
         _notify();
       }
@@ -212,6 +213,8 @@ class TransferReceiveViewModel extends ChangeNotifier {
   void _finish(TransferResult value, int epoch) {
     if (_disposed || epoch != _epoch || result != null) return;
     result = value;
+    scanDuration = _scanStopwatch?.elapsed;
+    _scanStopwatch?.stop();
     _epoch++;
     _timer?.cancel();
     _stop();

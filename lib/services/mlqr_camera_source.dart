@@ -7,25 +7,16 @@ import '../models/mlqr_camera_frame.dart';
 
 abstract interface class MlqrCameraSource {
   CameraController? get controller;
-  double get minZoom;
-  double get maxZoom;
   Future<void> start(void Function(MlqrCameraFrame) onFrame);
   Future<void> stop();
   Future<void> focusAt(Offset point);
-  Future<void> setZoom(double zoom);
 }
 
 /// Lifecycle calls are serialized by TransferReceiveViewModel.
 class DeviceMlqrCameraSource implements MlqrCameraSource {
   CameraController? _controller;
-  double _minZoom = 1;
-  double _maxZoom = 1;
   @override
   CameraController? get controller => _controller;
-  @override
-  double get minZoom => _minZoom;
-  @override
-  double get maxZoom => _maxZoom;
 
   @override
   Future<void> start(void Function(MlqrCameraFrame) onFrame) async {
@@ -93,13 +84,6 @@ class DeviceMlqrCameraSource implements MlqrCameraSource {
     } on CameraException {
       // Some devices expose no configurable exposure mode.
     }
-    try {
-      _minZoom = await controller.getMinZoomLevel();
-      _maxZoom = await controller.getMaxZoomLevel();
-    } on CameraException {
-      _minZoom = 1;
-      _maxZoom = 1;
-    }
   }
 
   @override
@@ -111,17 +95,6 @@ class DeviceMlqrCameraSource implements MlqrCameraSource {
       await controller.setExposurePoint(point);
     } on CameraException {
       // Manual focus is an enhancement; scanning remains available.
-    }
-  }
-
-  @override
-  Future<void> setZoom(double zoom) async {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
-    try {
-      await controller.setZoomLevel(zoom.clamp(_minZoom, _maxZoom));
-    } on CameraException {
-      // Keep scanning if a platform rejects a zoom request.
     }
   }
 

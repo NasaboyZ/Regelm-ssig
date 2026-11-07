@@ -10,12 +10,7 @@ class FakeMlqrCamera implements MlqrCameraSource {
   Completer<void>? starting;
   int starts = 0;
   int stops = 0;
-  double zoom = 1;
   Offset? focusPoint;
-  @override
-  double get minZoom => 1;
-  @override
-  double get maxZoom => 4;
   @override
   CameraController? get controller => null;
   @override
@@ -34,10 +29,5 @@ class FakeMlqrCamera implements MlqrCameraSource {
   @override
   Future<void> focusAt(Offset point) async {
     focusPoint = point;
-  }
-
-  @override
-  Future<void> setZoom(double value) async {
-    zoom = value;
   }
 }

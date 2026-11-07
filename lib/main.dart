@@ -11,7 +11,7 @@ void main() {
         ? const Directionality(
             textDirection: TextDirection.ltr,
             child: Banner(
-              message: 'TESTDATEN',
+              message: 'Dev',
               location: BannerLocation.topEnd,
               child: MyApp(),
             ),

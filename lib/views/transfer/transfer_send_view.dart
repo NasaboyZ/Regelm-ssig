@@ -77,11 +77,7 @@ class _TransferSendViewState extends State<TransferSendView> {
 
                 const SizedBox(height: 12),
                 Text(
-                  '${viewModel.isPreview
-                      ? 'Code'
-                      : viewModel.isTemporalAt(_index)
-                      ? 'Temporaler Layer'
-                      : 'MLQR'} ${_index + 1} von ${viewModel.codeCount}',
+                  '${viewModel.isPreview ? 'Code' : 'MLQR'} ${_index + 1} von ${viewModel.codeCount}',
                   style: const TextStyle(
                     fontSize: 32,
                     height: 1.15,
@@ -113,8 +109,7 @@ class _TransferSendViewState extends State<TransferSendView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${viewModel.temporalFrameCount} temporale Layer als '
-                    'Fallback · jeder Layer wird mehrfach angezeigt',
+                    'Nur Multi-Layer-QR-Codes · jeder Code wird einmal angezeigt',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.muted,
@@ -126,7 +121,18 @@ class _TransferSendViewState extends State<TransferSendView> {
                       'JSON ${_formatBytes(viewModel.jsonBytes!)} · '
                       'CBOR ${_formatBytes(viewModel.cborBytes!)} · '
                       'GZIP ${_formatBytes(viewModel.compressedBytes!)} · '
-                      'QR-Payload ${_formatBytes(viewModel.chunkWireBytes!)}',
+                      'QR-Payload ${_formatBytes(viewModel.chunkWireBytes!)} · '
+                      'Nutzdaten ${_formatBytes(viewModel.cipherTextBytes!)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Profil ${viewModel.profileId} · '
+                      'Layer je Code ${viewModel.payloadLayersPerCode.join('+')} · '
+                      'Vorbereitung ${viewModel.preparationMilliseconds} ms',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.muted,

@@ -18,7 +18,7 @@ void main() {
     const Directionality(
       textDirection: TextDirection.ltr,
       child: Banner(
-        message: 'ZYKLUS-DEMO',
+        message: '1Jahr ziklus',
         location: BannerLocation.topEnd,
         child: MyApp(),
       ),

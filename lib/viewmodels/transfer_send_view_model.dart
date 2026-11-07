@@ -5,7 +5,7 @@ import '../models/mlqr_code.dart';
 import '../services/mlqr_encoder_service.dart';
 import '../services/mlqr_transfer_service.dart';
 
-enum TransferDisplayMode { layered, temporal }
+enum TransferDisplayMode { layered }
 
 class TransferDisplayFrame {
   const TransferDisplayFrame({required this.raster, required this.mode});
@@ -16,10 +16,6 @@ class TransferDisplayFrame {
 
 /// Preview model or a sequence of real transfer images.
 class TransferSendViewModel {
-  /// One recovery pass is enough for the normal path. A future adaptive
-  /// profile can add another pass only for sequences that need recovery.
-  static const temporalRounds = 1;
-
   TransferSendViewModel.preview({
     MlqrEncoderService encoder = const MlqrEncoderService(),
   }) : isPreview = true,
@@ -54,12 +50,6 @@ class TransferSendViewModel {
           raster: code.displayRaster,
           mode: TransferDisplayMode.layered,
         ),
-      for (var round = 0; round < temporalRounds; round++)
-        for (final frame in sequence.temporalFrames)
-          TransferDisplayFrame(
-            raster: frame.raster,
-            mode: TransferDisplayMode.temporal,
-          ),
     ];
   }
 
@@ -80,13 +70,17 @@ class TransferSendViewModel {
   int? get cborBytes => transferSequence?.package.cborLength;
   int? get compressedBytes => transferSequence?.package.compressedLength;
   int? get chunkWireBytes => transferSequence?.package.chunkWireBytes;
+  int? get cipherTextBytes => transferSequence?.package.cipherTextBytes;
+  int? get chunkMetadataBytes => transferSequence?.package.chunkMetadataBytes;
   int? get chunkSize => transferSequence?.package.chunkSize;
+  String? get profileId => transferSequence?.profile.id;
+  int? get preparationMilliseconds =>
+      transferSequence?.preparationDuration.inMilliseconds;
+  List<int> get payloadLayersPerCode =>
+      transferSequence?.payloadLayersPerCode ?? [code.payloadCount];
   int get maxPayloadLayersPerCode =>
       transferSequence?.maxPayloadLayersPerCode ?? code.payloadCount;
-  int get temporalFrameCount => frames
-      .where((frame) => frame.mode == TransferDisplayMode.temporal)
-      .length;
+  int get temporalFrameCount => 0;
   TransferDisplayFrame frameAt(int index) => frames[index];
-  bool isTemporalAt(int index) =>
-      frameAt(index).mode == TransferDisplayMode.temporal;
+  bool isTemporalAt(int index) => false;
 }
