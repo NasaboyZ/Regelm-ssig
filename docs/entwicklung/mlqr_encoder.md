@@ -185,12 +185,13 @@ zu keinem Erfolg; Standard-QR ohne Referenzbalken wird nicht akzeptiert.
 
 ### Robustheit der physischen Geräteübertragung
 
-Die erfolgreiche Übertragung eines Jahresbestands zwischen physischen Geräten
-beruht nicht nur auf der verlängerten Scanzeit. Die im Commit
-`faaaf05fef2db990a32615d1bb74b6f747723ad5` eingeführte Lösung kombiniert
-mehrere Sicherungen:
+Die historische Lösung für die Übertragung eines Jahresbestands zwischen
+physischen Geräten beruhte nicht nur auf der verlängerten Scanzeit. Die im
+Commit `faaaf05fef2db990a32615d1bb74b6f747723ad5` eingeführte Lösung
+kombinierte mehrere Sicherungen. Der aktuelle produktive Pfad verwendet diese
+temporalen Wiederholungen nicht mehr:
 
-- **Wiederholung der temporalen Daten:** Die vollständige temporale QR-Sequenz
+- **Historische Wiederholung der temporalen Daten:** Die vollständige temporale QR-Sequenz
   wird drei Mal angezeigt. Verlorene oder zu spät dekodierte Kameraframes
   können dadurch in einer späteren Runde erneut gelesen werden.
 - **Fortschrittsbasierter Timeout:** Nach jedem neu akzeptierten Chunk wird der
@@ -211,8 +212,10 @@ mehrere Sicherungen:
 Der produktive Transfer verwendet ausschließlich farbige MLQR-Codes. Die
 temporale Schwarz-Weiss-Dekodierung bleibt als isolierter Diagnosepfad für
 Decoder-Tests erhalten, wird aber nicht mehr automatisch während eines
-Transfers versucht. Die Übertragung benötigt keinen Rückkanal zwischen Sender
-und Empfänger.
+Transfers versucht. Der frühere 7-Layer-Standard wurde wegen der zu engen
+Farbabstände auf 5 Nutzdaten-Layer reduziert; bei ungemessenen Transfers mit
+höchstens zwei daraus entstehenden Codes wird auf 3 Layer zurückgefallen.
+Die Übertragung benötigt keinen Rückkanal zwischen Sender und Empfänger.
 
 ### Praktische Grenze der 15 Ebenen
 
@@ -254,23 +257,19 @@ CBOR-Deserialisierung und erfolgreichem Datenbank-Commit erzeugt. Bei Abbruch,
 Timeout oder Abschluss werden die temporären Chunks aus dem Arbeitsspeicher
 entfernt.
 
-### Temporale Layer als Fallback
+### Temporale Layer als historischer Diagnosepfad
 
-Jeder Nutzdatenlayer enthält bereits einen vollständigen QR-Code mit einem
-kompletten `TransferChunk`. Deshalb kann die Anwendung zusätzlich eine temporale
-Sequenz erzeugen: Sie zeigt die vorhandenen Layer nacheinander als einzelne
-Schwarzweiss-QR-Codes an. Der Empfänger versucht nach einem fehlgeschlagenen
-farbigen MLQR-Scan automatisch, den aktuellen Kameraframe als normalen QR-Code
-zu dekodieren. Die Chunk-Metadaten bleiben unverändert; `transferId`, `index`
-und `total` ordnen die Layer wieder der Transfersession zu.
+Jeder Nutzdatenlayer enthält weiterhin einen vollständigen QR-Code mit einem
+kompletten `TransferChunk`. Historisch konnte die Anwendung diese Layer
+nacheinander als einzelne Schwarzweiss-QR-Codes anzeigen. Dieser Pfad bleibt
+für isolierte Decoder-Tests dokumentiert, ist aber im produktiven Sender und
+im automatischen Kamera-Decoder deaktiviert.
 
-Der Sender zeigt zunächst die farbigen MLQR-Codes und anschliessend die
-temporalen Layer. Diese komplette Sequenz wird standardmässig drei Mal
-gesendet. Dadurch können einzelne verlorene Kameraframes nachgeholt werden,
-ohne einen Rückkanal zwischen den Geräten einzuführen. Die Methode ist
-langsamer, vermeidet aber die engen RGB-Abstände der 15-Layer-Darstellung und
-kann auch mit einem gewöhnlichen Schwarzweiss-QR-Reader grundsätzlich erkannt
-werden.
+Der produktive Sender zeigt nur die farbigen MLQR-Codes. Die aktuelle
+Optimierung verwendet standardmässig fünf Nutzdaten-Layer und fällt bei
+ungemessenen Transfers mit höchstens zwei resultierenden Codes auf drei Layer
+zurück. Dadurch werden die RGB-Abstände grösser und die einzelnen MLQR-Codes
+leichter lesbar.
 
 Jeder erkannte Chunk setzt beim Empfänger den laufenden Scan-Timeout zurück.
 Duplikate werden vom `TransferChunkAccumulator` idempotent behandelt; die

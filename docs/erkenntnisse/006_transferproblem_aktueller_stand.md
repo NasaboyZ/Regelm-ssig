@@ -6,11 +6,12 @@
 
 > **Aktualisierung nach Commit `faaaf05fef2db990a32615d1bb74b6f747723ad5`**
 >
-> Die im ursprünglichen Bericht beschriebene Ursache wurde durch eine
-> Kombination aus fortschrittsbasiertem Timeout, adaptiver Bildauswertung
-> sowie automatischer Fokus- und Belichtungssteuerung entschärft. Der
-> produktive Transfer verwendet ausschließlich MLQR-Codes; temporale
-> Wiederholung und Zoomsteuerung sind entfernt.
+> Die im ursprünglichen Bericht beschriebene Ursache wurde zunächst durch
+> fortschrittsbasierten Timeout, adaptive Bildauswertung sowie automatische
+> Fokus- und Belichtungssteuerung untersucht. Der aktuelle produktive
+> Transfer verwendet ausschließlich MLQR-Codes; temporale Wiederholung und
+> Zoomsteuerung sind entfernt. Die Layerdichte wurde vom früheren
+> 7-Layer-Standard auf 5 Layer reduziert, mit konservativem 3-Layer-Fallback.
 > Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
 > Geräten ist damit erfolgreich möglich. Der historische Diagnosebericht
 > bleibt unten erhalten; Aussagen über einen noch offenen Hardwaretest sind
@@ -44,7 +45,9 @@ Der Transfer soll ohne Server, Cloud oder Konto funktionieren. Gerät A zeigt Da
 
 Die fachlichen Daten und die technischen Transferdaten sind getrennt. Die Transfermodelle beschreiben unter anderem `transferId`, Chunk-Index, Gesamtanzahl, Sicherheitsmodus und Nutzdaten. Siehe `docs/Entities/transferModelleEntry.md`.
 
-Der physische Kanal besteht aus zwei möglichen Darstellungen:
+Der physische Kanal hatte historisch zwei mögliche Darstellungen. Im aktuellen
+produktiven Pfad bleibt nur die farbige MLQR-Darstellung aktiv; der temporale
+Pfad dient nur noch der isolierten Diagnose.
 
 - **MLQR:** Mehrere QR-Ebenen werden in einem farbigen Bild gebündelt.
 - **Temporaler Fallback:** Einzelne schwarz-weisse QR-Layer werden nacheinander angezeigt.
@@ -86,7 +89,11 @@ Belege:
 
 ### 2.3 MLQR-Erzeugung
 
-`MlqrTransferService` bündelt bis zu sieben Nutzdaten-Layer pro angezeigtem MLQR. Bei größeren Transfers entstehen mehrere MLQR-Codes. Zusätzlich werden temporale schwarz-weisse Frames erzeugt.
+`MlqrTransferService` bündelt standardmässig bis zu fünf Nutzdaten-Layer pro
+angezeigtem MLQR. Bei ungemessenen kleinen Transfers wird auf drei Layer
+zurückgefallen, wenn das 5-Layer-Profil nur höchstens zwei Codes erzeugen
+würde. Bei größeren Transfers entstehen mehrere MLQR-Codes. Temporale
+Schwarz-Weiss-Frames werden im produktiven Pfad nicht mehr erzeugt.
 
 Die QR-Größe wird über eine Zielversion begrenzt. Die Sendeseite kann die Anzahl der Codes, Chunks, Layer und Payload-Größen anzeigen.
 
@@ -246,8 +253,8 @@ Belege:
 | Chunking und Metadaten | vorhanden | Session- und Duplikatprüfung vorhanden |
 | Verschlüsselter Codec | technisch vorhanden | Empfangs-UI nutzt ihn noch nicht vollständig |
 | MLQR-Erzeugung aus Test-/Snapshotdaten | vorhanden | Raster- und Service-Tests vorhanden |
-| Temporaler QR-Fallback | vorhanden | Decoder und Frame-Erzeugung vorhanden |
-| Kamera-Lokalisierung | vorhanden und robuster | Crop-/Vollbild-Fallback sowie Fokus- und Zoomsteuerung vorhanden |
+| Temporaler QR-Fallback | historisch vorhanden | im produktiven Sender-/Decoderpfad deaktiviert |
+| Kamera-Lokalisierung | vorhanden und robuster | Crop-/Vollbild-Fallback sowie Fokus- und Belichtungssteuerung vorhanden; Zoom entfernt |
 | Farbkalibrierung unter realem Licht | verbessert | adaptive Kontrastauswertung; weitere Gerätemessungen bleiben sinnvoll |
 | Mehrere echte Geräte | erfolgreich nachgewiesen | Jahresbestand zwischen physischen Geräten übertragen |
 | Vollständiger verschlüsselter Produktivtransfer | offen | Passphrase-Fluss und UI fehlen beziehungsweise sind nicht fertig integriert |
@@ -420,7 +427,7 @@ TrackingSnapshot
 
 Wenn diese Stufe fehlschlägt, liegt der Fehler in Codec, MLQR-Erzeugung oder Raster-Decoder.
 
-### Stufe 2: Temporaler Schwarz-Weiss-Fallback
+### Stufe 2: Temporaler Schwarz-Weiss-Fallback (historischer Diagnosepfad)
 
 Nur einen einzelnen temporalen Frame über Bildschirm und Kamera übertragen. Damit wird die farbliche Mehrschicht-Rekonstruktion umgangen.
 
@@ -469,7 +476,7 @@ Der Decoder sollte für Debug-Builds Messwerte liefern oder protokollieren könn
 
 Ohne diese Messwerte bleibt unklar, ob ein Fehlschlag aus Lokalisierung, Geometrie, Referenzbalken, Farbtrennung oder normalem QR-Decoding stammt.
 
-### Priorität 2: Temporalen Fallback zuerst stabilisieren
+### Priorität 2: Temporalen Fallback zuerst stabilisieren (nicht mehr produktiv)
 
 Der temporale schwarz-weisse Modus ist technisch einfacher und sollte als Referenzkanal dienen. Er kann zeigen, ob Kamera, QR-Lokalisierung und Chunk-Session grundsätzlich funktionieren.
 

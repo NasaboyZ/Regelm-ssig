@@ -10,6 +10,77 @@ Weniger Codes bedeuten nicht automatisch einen schnelleren Transfer. Eine höher
 
 Dieses Dokument beschreibt das Konzept und die Anforderungen. Es belegt weder eine bereits erfolgte Implementierung noch gemessene Übertragungszeiten.
 
+## Erkenntnis aus der ersten erfolgreichen Optimierung
+
+Die erste praktische Verbesserung entstand nicht dadurch, dass die logischen
+Chunks entfernt oder vervielfacht wurden. Die Chunks bleiben für
+`transferId`, Reihenfolge, Vollständigkeitsprüfung und Rekonstruktion
+notwendig. Geändert wurde die optische Bündelung dieser Chunks.
+
+Der frühere Standard konnte bis zu sieben Nutzdaten-Layer in einem MLQR-Code
+zusammenfassen. Bei einem Jahresdatensatz führte das dazu, dass nur zwei sehr
+dicht belegte MLQR-Codes angezeigt wurden. Mathematisch war diese Aufteilung
+effizient, optisch aber anspruchsvoll: Je mehr Layer in den drei RGB-Kanälen
+liegen, desto kleiner werden die Abstände zwischen gültigen
+Teilmengensummen. Ein einzelner falsch gemessener Farbwert kann dann einen
+gesamten MLQR-Code unlesbar machen, weil alle darin enthaltenen QR-Layer
+korrekt rekonstruiert werden müssen.
+
+Die erfolgreiche Änderung verwendet deshalb standardmässig fünf
+Nutzdaten-Layer pro MLQR-Code. Wenn bei einem ungemessenen Transfer mit fünf
+Layern höchstens zwei Codes entstehen würden, wird konservativ auf drei
+Layer zurückgefallen. Dadurch entstehen gegebenenfalls mehr sichtbare Codes,
+aber jeder einzelne Code ist optisch einfacher und zuverlässiger zu lesen.
+
+Diese Beobachtung erklärt den Erfolg der Änderung:
+
+```text
+weniger Nutzdaten-Layer je MLQR
+→ grössere Farbabstände zwischen Layerkombinationen
+→ eindeutigere Subset-Sum-Zuordnung
+→ mehr vollständig dekodierte MLQR-Codes
+→ vollständige Chunk-Sammlung und Rekonstruktion
+```
+
+Die Codeanzahl bleibt datenabhängig:
+
+```text
+Codeanzahl = ceil(Chunkanzahl / maximale Nutzdaten-Layer pro Code)
+```
+
+Die Chunks werden möglichst gleichmässig verteilt. Zehn Chunks werden bei
+einer Kapazität von vier Layern beispielsweise als `4 + 3 + 3` übertragen.
+Nutzdaten-Layer und optische Layer dürfen dabei nicht verwechselt werden:
+Dummy- oder Reserve-Layer des MLQR-Formats zählen nicht als zusätzliche
+Chunkkapazität.
+
+Der Decoder liest weiterhin den Referenzbalken, bestimmt daraus die optische
+Layeranzahl, rekonstruiert die einzelnen QR-Layer und übergibt deren Pakete
+an den bestehenden `TransferChunkAccumulator`. Die Chunks sind daher intern
+weiterhin vorhanden, werden aber nicht zusätzlich als temporale Einzel-QRs
+angezeigt.
+
+Die automatische Zoomsteuerung wurde ebenfalls entfernt, weil sie unter den
+aktuellen Testbedingungen keinen nachweisbaren Nutzen für die MLQR-Erkennung
+brachte. Automatischer Fokus, automatische Belichtung und Tap-to-Focus
+bleiben erhalten.
+
+### Aktueller Implementierungsstand
+
+- Standardprofil: fünf Nutzdaten-Layer pro MLQR-Code.
+- Konservativer ungemessener Fallback: drei Nutzdaten-Layer, wenn das
+  Fünf-Layer-Profil nur höchstens zwei Codes erzeugen würde.
+- Gemessene Profile: drei, fünf, sieben, neun und fünfzehn Layer.
+- Temporale Einzel-QRs: nicht mehr im produktiven Sender- oder Decoderpfad.
+- Zoom-Slider und Zoom-API: entfernt.
+- Metriken: Payloadbytes, Chunk-Metadaten, Chunkanzahl, Layerverteilung,
+  Vorbereitungsdauer, Erkennungsdauer und Scan-Gesamtdauer.
+
+Die digitale Wirkung ist durch die MLQR-, Transfer- und Empfangstests
+abgesichert. Ein formaler Nachweis von weniger als 120 Sekunden sowie die
+Erfolgsquote und p95-Erkennungsdauer auf echten Android- und iOS-Geräten
+stehen noch aus.
+
 ## Begriffe
 
 | Begriff         | Bedeutung                                                                          |
