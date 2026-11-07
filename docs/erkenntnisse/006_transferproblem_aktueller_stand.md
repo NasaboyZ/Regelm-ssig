@@ -7,8 +7,10 @@
 > **Aktualisierung nach Commit `faaaf05fef2db990a32615d1bb74b6f747723ad5`**
 >
 > Die im ursprünglichen Bericht beschriebene Ursache wurde durch eine
-> Kombination aus dreifacher temporaler Wiederholung, fortschrittsbasiertem
-> Timeout, adaptiver Bildauswertung sowie Fokus- und Zoomsteuerung entschärft.
+> Kombination aus fortschrittsbasiertem Timeout, adaptiver Bildauswertung
+> sowie automatischer Fokus- und Belichtungssteuerung entschärft. Der
+> produktive Transfer verwendet ausschließlich MLQR-Codes; temporale
+> Wiederholung und Zoomsteuerung sind entfernt.
 > Die Übertragung eines ganzen Jahres zyklischer Daten zwischen physischen
 > Geräten ist damit erfolgreich möglich. Der historische Diagnosebericht
 > bleibt unten erhalten; Aussagen über einen noch offenen Hardwaretest sind

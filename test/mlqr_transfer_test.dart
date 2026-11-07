@@ -3,6 +3,7 @@ import 'package:regelmaessig/models/day_entry.dart';
 import 'package:regelmaessig/services/mlqr_decoder_service.dart';
 import 'package:regelmaessig/services/mlqr_encoder_service.dart';
 import 'package:regelmaessig/services/mlqr_transfer_service.dart';
+import 'package:regelmaessig/services/mlqr_transfer_profile.dart';
 import 'package:regelmaessig/services/transfer_codec.dart';
 
 void main() {
@@ -54,6 +55,61 @@ void main() {
     },
   );
 
+  test('balances chunks across MLQR codes', () async {
+    final balancedTransfer = MlqrTransferService(maxPayloadLayersPerCode: 4);
+    final sequence = await balancedTransfer
+        .encodeUnencryptedSnapshotForDevelopment(
+          snapshot,
+          transferId: 'balanced-sequence',
+          chunkSize: 5,
+        );
+    final distribution = sequence.payloadLayersPerCode;
+    final minimum = distribution.reduce((a, b) => a < b ? a : b);
+    final maximum = distribution.reduce((a, b) => a > b ? a : b);
+
+    expect(distribution.reduce((a, b) => a + b), sequence.chunkCount);
+    expect(distribution.every((count) => count <= 4), isTrue);
+    expect(maximum - minimum, lessThanOrEqualTo(1));
+  });
+
+  test('uses measured profiles and falls back to the standard profile', () {
+    const selector = MlqrTransferProfileSelector();
+    expect(selector.select(const []).id, MlqrTransferProfile.standard.id);
+    expect(
+      selector.select([
+        MlqrProfileMeasurement(
+          profile: MlqrTransferProfile.fast,
+          successRate: 0.99,
+          p95RecognitionMs: 4200,
+        ),
+        MlqrProfileMeasurement(
+          profile: MlqrTransferProfile.experimental,
+          successRate: 0.90,
+          p95RecognitionMs: 1800,
+        ),
+      ]).id,
+      MlqrTransferProfile.fast.id,
+    );
+  });
+
+  test(
+    'uses the robust profile when an unmeasured transfer would have two codes',
+    () async {
+      final sequence = await MlqrTransferService()
+          .encodeUnencryptedSnapshotForDevelopment(
+            TrackingSnapshot(),
+            transferId: 'short-unmeasured-transfer',
+          );
+
+      expect(sequence.profile, MlqrTransferProfile.robust);
+      expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(3));
+      expect(
+        sequence.codeCount,
+        greaterThanOrEqualTo(sequence.chunkCount ~/ 3),
+      );
+    },
+  );
+
   test('development sequence decodes without a passphrase', () async {
     final sequence = await transfer.encodeUnencryptedSnapshotForDevelopment(
       snapshot,
@@ -75,7 +131,7 @@ void main() {
       expect(sequence.maxQrVersion, lessThanOrEqualTo(10));
       expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(7));
       expect(sequence.codes.every((code) => code.payloadCount <= 7), isTrue);
-      expect(sequence.temporalFrames.length, sequence.chunkCount);
+      expect(sequence.codeCount, greaterThan(0));
     },
   );
 
@@ -106,11 +162,16 @@ void main() {
 
       expect(sequence.chunkCount, greaterThan(1));
       expect(sequence.maxPayloadLayersPerCode, lessThanOrEqualTo(7));
-      expect(sequence.temporalFrames.length, sequence.chunkCount);
+      expect(sequence.codeCount, greaterThan(0));
       expect(sequence.package.jsonLength, greaterThan(0));
       expect(sequence.package.cborLength, greaterThan(0));
       expect(sequence.package.compressedLength, greaterThan(0));
       expect(sequence.package.chunkWireBytes, greaterThan(0));
+      expect(
+        sequence.package.chunkWireBytes,
+        sequence.package.cipherTextBytes + sequence.package.chunkMetadataBytes,
+      );
+      expect(sequence.preparationDuration, isNotNull);
       expect(restored.toJson(), year.toJson());
     },
   );

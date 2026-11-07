@@ -169,27 +169,6 @@ class _TransferReceiveViewState extends State<TransferReceiveView>
                       ),
                     ),
                   ),
-                  if (ready && _model.maxZoom > _model.minZoom) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.zoom_out, color: AppColors.muted),
-                        Expanded(
-                          child: Slider(
-                            value: _model.zoom.clamp(
-                              _model.minZoom,
-                              _model.maxZoom,
-                            ),
-                            min: _model.minZoom,
-                            max: _model.maxZoom,
-                            label: '${_model.zoom.toStringAsFixed(1)}×',
-                            onChanged: (value) => _model.setZoom(value),
-                          ),
-                        ),
-                        const Icon(Icons.zoom_in, color: AppColors.muted),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 20),
                   Text(
                     _model.paused

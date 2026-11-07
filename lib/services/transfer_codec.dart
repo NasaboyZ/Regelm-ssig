@@ -133,6 +133,9 @@ class TransferPackage {
   final int chunkSize;
   int get chunkWireBytes =>
       chunks.fold(0, (total, chunk) => total + chunk.toBytes().length);
+  int get cipherTextBytes =>
+      chunks.fold(0, (total, chunk) => total + chunk.cipherText.length);
+  int get chunkMetadataBytes => chunkWireBytes - cipherTextBytes;
 }
 
 /// Holds validated chunks for one transfer session until the complete payload

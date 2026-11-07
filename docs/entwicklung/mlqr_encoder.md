@@ -206,14 +206,13 @@ mehrere Sicherungen:
   bleiben dadurch lesbar; Bilder mit praktisch keinem Kontrast werden dagegen
   verworfen.
 - **Kamerasteuerung:** Fokus und Belichtung werden automatisch konfiguriert.
-  Durch Antippen kann der Empfänger zusätzlich auf eine Stelle fokussieren;
-  falls das Gerät Zoom unterstützt, steht ein Zoom-Slider zur Verfügung.
+  Durch Antippen kann der Empfänger zusätzlich auf eine Stelle fokussieren.
 
-Die temporale Wiederholung ist besonders wichtig für Jahresdaten: Sie macht
-die Übertragung langsamer, reduziert aber die Abhängigkeit von einzelnen
-verlorenen Frames und vermeidet bei der temporalen Darstellung die engen
-Farbabstände der stark belegten 15-Layer-MLQR-Codes. Die Übertragung benötigt
-keinen Rückkanal zwischen Sender und Empfänger.
+Der produktive Transfer verwendet ausschließlich farbige MLQR-Codes. Die
+temporale Schwarz-Weiss-Dekodierung bleibt als isolierter Diagnosepfad für
+Decoder-Tests erhalten, wird aber nicht mehr automatisch während eines
+Transfers versucht. Die Übertragung benötigt keinen Rückkanal zwischen Sender
+und Empfänger.
 
 ### Praktische Grenze der 15 Ebenen
 

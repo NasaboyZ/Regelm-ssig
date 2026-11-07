@@ -11,22 +11,17 @@ import 'go_transfer_codec.dart';
 import 'mlqr_renderer.dart';
 import 'transfer_codec.dart';
 
-class MlqrTemporalFrame {
-  const MlqrTemporalFrame({required this.raster, required this.chunkIndex});
-
-  final MlqrRgbRaster raster;
-  final int chunkIndex;
-}
-
 class MlqrTransferSequence {
   const MlqrTransferSequence({
     required this.codes,
-    required this.temporalFrames,
     required this.package,
+    required this.profile,
+    required this.preparationDuration,
   });
   final List<MlqrCode> codes;
-  final List<MlqrTemporalFrame> temporalFrames;
   final TransferPackage package;
+  final MlqrTransferProfile profile;
+  final Duration preparationDuration;
   int get codeCount => codes.length;
   int get chunkCount => package.chunks.length;
   int get maxPayloadLayersPerCode => codes.fold<int>(
@@ -41,6 +36,13 @@ class MlqrTransferSequence {
     0,
     (max, code) => (code.qrVersion ?? 0) > max ? code.qrVersion! : max,
   );
+  List<int> get payloadLayersPerCode => [
+    for (final code in codes) code.payloadCount,
+  ];
+  List<int> get opticalLayersPerCode => [
+    for (final code in codes) code.layers.length,
+  ];
+  int get visibleFrameCount => codes.length;
 }
 
 /// Bridges the logical transfer chunks and the physical multi-layer images.
@@ -67,6 +69,7 @@ class MlqrTransferService {
   final MlqrRenderer renderer;
   final int targetQrVersion;
   final int maxPayloadLayersPerCode;
+  final bool _automaticUnmeasuredProfile;
 
   Future<MlqrTransferSequence> encodeEncryptedSnapshot(
     TrackingSnapshot snapshot, {
@@ -74,6 +77,7 @@ class MlqrTransferService {
     required String transferId,
     int? chunkSize,
   }) async {
+    final stopwatch = Stopwatch()..start();
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: true);
     final package = await payloadCodec.encodeEncryptedSnapshot(
@@ -82,7 +86,7 @@ class MlqrTransferService {
       transferId: transferId,
       chunkSize: effectiveChunkSize,
     );
-    return _encodePackage(package);
+    return _encodePackage(package, stopwatch.elapsed);
   }
 
   Future<MlqrTransferSequence> encodeUnencryptedSnapshotForDevelopment(
@@ -90,6 +94,7 @@ class MlqrTransferService {
     required String transferId,
     int? chunkSize,
   }) async {
+    final stopwatch = Stopwatch()..start();
     final effectiveChunkSize =
         chunkSize ?? _recommendedChunkSize(transferId, encrypted: false);
     final package = await payloadCodec.encodeUnencryptedSnapshotForDevelopment(
@@ -97,7 +102,7 @@ class MlqrTransferService {
       transferId: transferId,
       chunkSize: effectiveChunkSize,
     );
-    return _encodePackage(package);
+    return _encodePackage(package, stopwatch.elapsed);
   }
 
   int _recommendedChunkSize(String transferId, {required bool encrypted}) {
@@ -141,7 +146,10 @@ class MlqrTransferService {
     }
   }
 
-  MlqrTransferSequence _encodePackage(TransferPackage package) {
+  MlqrTransferSequence _encodePackage(
+    TransferPackage package,
+    Duration preparationDuration,
+  ) {
     if (maxPayloadLayersPerCode < 1 ||
         maxPayloadLayersPerCode > MlqrEncoderService.maxPayloadLayers) {
       throw ArgumentError.value(
@@ -150,6 +158,14 @@ class MlqrTransferService {
         'muss zwischen 1 und ${MlqrEncoderService.maxPayloadLayers} liegen',
       );
     }
+    final fallbackToRobust =
+        _automaticUnmeasuredProfile && package.chunks.length <= 10;
+    final effectiveMaxPayloadLayers = fallbackToRobust
+        ? MlqrTransferProfile.robust.maxPayloadLayersPerCode
+        : maxPayloadLayersPerCode;
+    final effectiveProfile = fallbackToRobust
+        ? MlqrTransferProfile.robust
+        : profile;
     final codes = <MlqrCode>[];
     final temporalFrames = <MlqrTemporalFrame>[];
     final packets = package.chunks.map((chunk) => chunk.toBytes()).toList();
@@ -195,31 +211,20 @@ class MlqrTransferService {
     }
     return MlqrTransferSequence(
       codes: List.unmodifiable(codes),
-      temporalFrames: List.unmodifiable(temporalFrames),
       package: package,
+      profile: effectiveProfile,
+      preparationDuration: preparationDuration,
     );
   }
 
-  MlqrRgbRaster _temporalRaster(QrModuleMatrix matrix) {
-    final size = matrix.size + MlqrCode.quietZone * 2;
-    return MlqrRgbRaster(
-      width: size,
-      height: size,
-      pixels: [
-        for (var row = 0; row < size; row++)
-          for (var col = 0; col < size; col++)
-            row >= MlqrCode.quietZone &&
-                    row < size - MlqrCode.quietZone &&
-                    col >= MlqrCode.quietZone &&
-                    col < size - MlqrCode.quietZone &&
-                    matrix.isDark(
-                      row - MlqrCode.quietZone,
-                      col - MlqrCode.quietZone,
-                    )
-                ? 0x000000
-                : 0xffffff,
-      ],
-    );
+  List<int> _balancedDistribution(int totalChunks, int maxPerCode) {
+    if (totalChunks < 1) {
+      throw ArgumentError.value(totalChunks, 'totalChunks');
+    }
+    final codeCount = (totalChunks + maxPerCode - 1) ~/ maxPerCode;
+    final base = totalChunks ~/ codeCount;
+    final remainder = totalChunks % codeCount;
+    return [for (var i = 0; i < codeCount; i++) base + (i < remainder ? 1 : 0)];
   }
 
   Future<TrackingSnapshot> decodeSnapshot(
