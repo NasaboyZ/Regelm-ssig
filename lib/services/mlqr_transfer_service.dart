@@ -9,6 +9,7 @@ import 'mlqr_encoder_service.dart';
 import 'go_mlqr_renderer.dart';
 import 'go_transfer_codec.dart';
 import 'mlqr_renderer.dart';
+import 'mlqr_transfer_profile.dart';
 import 'transfer_codec.dart';
 
 class MlqrTransferSequence {
@@ -52,8 +53,10 @@ class MlqrTransferService {
     MlqrDecoderService? decoder,
     TrackingSnapshotTransferCodec? payloadCodec,
     MlqrRenderer? renderer,
-    this.targetQrVersion = 10,
-    this.maxPayloadLayersPerCode = 7,
+    MlqrTransferProfile? profile,
+    Iterable<MlqrProfileMeasurement> measuredProfiles = const [],
+    int? targetQrVersion,
+    int? maxPayloadLayersPerCode,
   }) : encoder = encoder ?? const MlqrEncoderService(),
        decoder = decoder ?? const MlqrDecoderService(),
        payloadCodec =
@@ -61,12 +64,31 @@ class MlqrTransferService {
            GoTransferCodec.tryLoad() ??
            TrackingSnapshotTransferCodec(),
        renderer =
-           renderer ?? GoMlqrRenderer.tryLoad() ?? const DartMlqrRenderer();
+           renderer ?? GoMlqrRenderer.tryLoad() ?? const DartMlqrRenderer(),
+       profile =
+           profile ??
+           const MlqrTransferProfileSelector().select(measuredProfiles),
+       targetQrVersion =
+           targetQrVersion ??
+           (profile ??
+                   const MlqrTransferProfileSelector().select(measuredProfiles))
+               .targetQrVersion,
+       maxPayloadLayersPerCode =
+           maxPayloadLayersPerCode ??
+           (profile ??
+                   const MlqrTransferProfileSelector().select(measuredProfiles))
+               .maxPayloadLayersPerCode,
+       _automaticUnmeasuredProfile =
+           profile == null &&
+           measuredProfiles.isEmpty &&
+           targetQrVersion == null &&
+           maxPayloadLayersPerCode == null;
 
   final MlqrEncoderService encoder;
   final MlqrDecoderService decoder;
   final TrackingSnapshotTransferCodec payloadCodec;
   final MlqrRenderer renderer;
+  final MlqrTransferProfile profile;
   final int targetQrVersion;
   final int maxPayloadLayersPerCode;
   final bool _automaticUnmeasuredProfile;
@@ -166,51 +188,28 @@ class MlqrTransferService {
     final effectiveProfile = fallbackToRobust
         ? MlqrTransferProfile.robust
         : profile;
-    final codes = <MlqrCode>[];
-    final temporalFrames = <MlqrTemporalFrame>[];
     final packets = package.chunks.map((chunk) => chunk.toBytes()).toList();
     final rendered = <MlqrCode>[];
-    for (
-      var offset = 0;
-      offset < packets.length;
-      offset += maxPayloadLayersPerCode
-    ) {
-      final end = (offset + maxPayloadLayersPerCode).clamp(0, packets.length);
+    final distribution = _balancedDistribution(
+      packets.length,
+      effectiveMaxPayloadLayers,
+    );
+    var offset = 0;
+    for (final count in distribution) {
+      final end = offset + count;
       rendered.addAll(
         renderer.render(
           packets.sublist(offset, end),
-          maxLayersPerCode: maxPayloadLayersPerCode,
+          maxLayersPerCode: effectiveMaxPayloadLayers,
         ),
       );
+      offset = end;
     }
-    codes.addAll(rendered);
-    if (renderer.supportsTemporalFallback) {
-      for (
-        var offset = 0;
-        offset < package.chunks.length;
-        offset += maxPayloadLayersPerCode
-      ) {
-        final end = (offset + maxPayloadLayersPerCode).clamp(
-          0,
-          package.chunks.length,
-        );
-        final group = package.chunks.sublist(offset, end);
-        final code = encoder.encode(
-          group.map((chunk) => chunk.toBytes()).toList(),
-        );
-        for (final layer in code.layers) {
-          if (layer.isDummy) continue;
-          temporalFrames.add(
-            MlqrTemporalFrame(
-              raster: _temporalRaster(layer.matrix),
-              chunkIndex: offset + layer.payloadIndex!,
-            ),
-          );
-        }
-      }
+    if (rendered.isEmpty) {
+      throw const FormatException('Transfer enthält keine Nutzdaten.');
     }
     return MlqrTransferSequence(
-      codes: List.unmodifiable(codes),
+      codes: List.unmodifiable(rendered),
       package: package,
       profile: effectiveProfile,
       preparationDuration: preparationDuration,

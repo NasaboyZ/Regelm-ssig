@@ -35,7 +35,7 @@ Widget harness({Widget? home}) => MaterialApp(
 );
 
 void main() {
-  test('uses one bounded temporal recovery pass', () async {
+  test('shows one layered frame per generated MLQR code', () async {
     final sequence = await MlqrTransferService()
         .encodeUnencryptedSnapshotForDevelopment(
           TrackingSnapshot(),
@@ -44,10 +44,11 @@ void main() {
         );
     final model = TransferSendViewModel.sequence(sequence);
 
-    expect(model.temporalFrameCount, sequence.chunkCount);
+    expect(model.temporalFrameCount, 0);
+    expect(model.codeCount, sequence.codeCount);
     expect(
-      model.temporalFrameCount,
-      sequence.temporalFrames.length * TransferSendViewModel.temporalRounds,
+      model.frames.every((frame) => frame.mode == TransferDisplayMode.layered),
+      isTrue,
     );
   });
 
